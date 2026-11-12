@@ -1,0 +1,1204 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Visor 3D de la reforma de cocina y aseo · Compañía">
+<title>Compañía 3D</title>
+<style>
+/* Layout: cabecera (marca + barra de pestañas) y debajo dibujo | panel de 300 px; en móvil el panel pasa debajo del dibujo. Blanco y negro, trazo de 0,5 px, separadores punteados. */
+:root{--paper:#ffffff;--ink:#000000;--rule:#000000;--accent:#0040ff;--accent-soft:#dfe6ff;--warn:#c8102e;--pin:#7b1d2c;
+  --f:"Helvetica Neue",Helvetica,Arial,sans-serif;--s-xs:10px;--s-s:11px;--s-m:12px;--s-l:15px;--panel:300px;--bar:44px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0c0c0c;--ink:#f4f4f4;--rule:#f4f4f4;--accent:#7f9cff;--accent-soft:#1c2440;--warn:#ff6b7f;--pin:#ff6b7f;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#0c0c0c;--ink:#f4f4f4;--rule:#f4f4f4;--accent:#7f9cff;--accent-soft:#1c2440;--warn:#ff6b7f;--pin:#ff6b7f;color-scheme:dark}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f);font-size:var(--s-m);overflow:hidden;padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button,select,input,textarea{font-family:var(--f);font-size:var(--s-s);color:var(--ink)}
+.app{display:grid;grid-template-rows:auto 1fr;height:100%}
+header{display:grid;grid-template-columns:minmax(0,1fr) var(--panel);grid-template-rows:auto var(--bar);align-items:center;padding-left:max(16px,env(safe-area-inset-left,0px));border-bottom:.5px solid var(--rule);min-width:0}
+header .marca{grid-column:1/-1;font-weight:700;letter-spacing:.02em;white-space:nowrap;font-size:var(--s-l);padding-top:10px}
+header .marca span{font-weight:400}
+header .barra{display:flex;align-items:center;gap:12px;min-width:0;padding-right:16px}
+header .acciones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-inline:0 max(16px,env(safe-area-inset-right,0px))}
+.tabs{display:flex;flex:0 0 auto}
+.tabs button{border:.5px solid var(--ink);background:transparent;padding:0 12px;height:26px;min-width:40px;font-weight:700;cursor:pointer}
+.tabs button+button{border-left:0}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+header .sp{flex:1}
+header select{max-width:220px}
+.estado{font-size:var(--s-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.btn{border:.5px solid var(--ink);background:transparent;padding:5px 10px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--accent-soft)}
+.btn.on,.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btn.rojo{color:var(--warn);border-color:var(--warn)}
+.btn.rojo[aria-pressed="true"]{background:var(--warn);color:var(--paper)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,.tabs button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+select{border:.5px solid var(--ink);background:var(--paper);padding:4px 6px;border-radius:0}
+.acciones .btn{line-height:16px;height:28px;padding:5px 4px;font-weight:400;text-align:center;overflow:hidden;text-overflow:ellipsis}
+.main{display:grid;grid-template-columns:1fr var(--panel);min-height:0}
+.vista{position:relative;min-width:0;min-height:0;overflow:hidden}
+#app{position:absolute;inset:0;touch-action:none}
+#app canvas{display:block;width:100%;height:100%;outline:none}
+.panel{border-left:.5px solid var(--rule);overflow-y:auto;padding:12px 16px 32px;min-width:0;overscroll-behavior:contain}
+.sec{padding-block:10px}
+.sec+.sec,.acciones.en-panel+.sec{background-image:radial-gradient(circle,var(--ink) .55px,transparent .75px);background-size:4px 3px;background-repeat:repeat-x;background-position:0 0}
+.sec h3{font-size:var(--s-s);font-weight:700;margin:4px 0 8px;letter-spacing:.02em}
+.mini{font-weight:400;font-size:var(--s-xs);float:right}
+.fila{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fila+.fila,.fila+label.campo,label.campo+.fila{margin-top:6px}
+.chk{display:flex;align-items:center;gap:6px;font-size:var(--s-s);cursor:pointer;min-width:0}
+.chk input{margin:0;accent-color:var(--ink);flex:none}
+.chk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lista{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
+.lista .gt{grid-column:1/-1;font-size:var(--s-xs);font-weight:700;margin-top:6px}
+.lista .gt:first-child{margin-top:0}
+.leyenda{display:grid;grid-template-columns:1fr auto;gap:3px 8px;font-size:var(--s-s);align-items:center}
+.leyenda .sw{display:inline-block;width:14px;height:6px;border-radius:3px;flex:0 0 auto}
+.leyenda .v{font-variant-numeric:tabular-nums;opacity:.75;text-align:right;white-space:nowrap}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:8px 0}
+.stats div{border:1px solid #ddd;border-radius:6px;padding:6px 8px}
+:root[data-theme="dark"] .stats div{border-color:#333}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .stats div{border-color:#333}}
+.stats b{display:block;font-size:var(--s-m);font-variant-numeric:tabular-nums}
+.stats span{font-size:var(--s-xs);opacity:.75}
+label.campo,div.campo{display:grid;grid-template-columns:72px 1fr 44px;align-items:center;gap:8px;font-size:var(--s-s)}
+.campo input[type=range]{width:100%;accent-color:var(--ink)}
+.campo output{font-variant-numeric:tabular-nums;text-align:right}
+table.med{width:100%;border-collapse:collapse;font-size:var(--s-xs);font-variant-numeric:tabular-nums}
+table.med td{padding:2px 0;vertical-align:top}
+table.med td:last-child{text-align:right;white-space:nowrap;padding-left:8px}
+.insp{font-size:var(--s-s);line-height:1.45;word-break:break-word}
+.insp b{display:block;font-size:var(--s-m)}
+.nota{font-size:var(--s-xs);line-height:1.4;margin:6px 0 0}
+.aspa{position:absolute;top:10px;right:10px;width:14px;height:14px;pointer-events:none;color:var(--ink);z-index:3}
+.esq{position:absolute;width:14px;height:14px;pointer-events:none;z-index:3}
+.esq.a{top:30px;right:30px;border-top:.5px solid var(--ink);border-right:.5px solid var(--ink)}
+.esq.b{bottom:14px;left:14px;border-bottom:.5px solid var(--ink);border-left:.5px solid var(--ink)}
+.rotulo{position:absolute;left:34px;bottom:30px;font-weight:700;font-size:var(--s-s);pointer-events:none;max-width:60%;z-index:3}
+.rotulo span{display:block;font-weight:400;font-size:var(--s-xs)}
+.toast{position:absolute;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:7px 12px;font-size:var(--s-s);max-width:80%;pointer-events:none;z-index:6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pins{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
+.pin{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:var(--pin);color:#fff;font:700 10px/20px var(--f);text-align:center;border:0;padding:0;box-shadow:0 0 0 1.5px var(--paper)}
+.pin.done{background:#888}
+.pin.hl{background:var(--ink);color:var(--paper);box-shadow:0 0 0 2px var(--pin)}
+.mlab{position:absolute;left:0;top:0;padding:3px 6px;background:var(--accent);color:#fff;font:700 var(--s-xs)/1.2 var(--f);white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
+#joy{position:absolute;left:34px;bottom:64px;width:104px;height:104px;border-radius:50%;border:.5px solid var(--ink);touch-action:none;z-index:4;background:color-mix(in srgb,var(--paper) 60%,transparent)}
+#joy i{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:var(--ink)}
+.caja{position:absolute;left:34px;right:34px;bottom:30px;z-index:7;background:var(--paper);border:.5px solid var(--ink);padding:10px 12px;display:grid;gap:8px;max-width:460px}
+.caja .meta{font-size:var(--s-xs);display:flex;flex-wrap:wrap;gap:2px 10px}
+.caja textarea{width:100%;min-height:64px;resize:vertical;border:.5px solid var(--ink);background:var(--paper);padding:6px;font-size:var(--s-m);line-height:1.4;border-radius:0}
+.caja .txt{font-size:var(--s-m);line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;max-height:30vh;overflow:auto}
+.caja .fila{justify-content:flex-end}
+.nota-i{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;padding:7px 0;cursor:pointer;background-image:radial-gradient(circle,var(--ink) .5px,transparent .7px);background-size:4px 2px;background-repeat:repeat-x;background-position:0 100%;text-align:left;border:0;width:100%}
+.nota-i .ped{display:inline-block;min-width:16px;padding:0 4px;border:.5px solid var(--pin);color:var(--pin);text-align:center;font-weight:700;font-size:var(--s-xs);align-self:start}
+.nota-i .txt{font-size:var(--s-s);line-height:1.4;overflow-wrap:anywhere}
+.nota-i .meta{font-size:var(--s-xs);text-align:right;white-space:nowrap;line-height:1.35}
+.nota-i.done .txt{text-decoration:line-through;opacity:.6}
+.nota-i.done .ped{border-color:var(--ink);color:var(--ink);opacity:.5}
+.lnk{border:0;background:none;padding:0;text-decoration:underline;cursor:pointer;font-size:var(--s-xs)}
+.datos{position:absolute;inset:0;overflow:auto;padding:28px max(34px,env(safe-area-inset-right,0px)) 40px max(34px,env(safe-area-inset-left,0px));background:var(--paper);z-index:5}
+.datos h2{font-size:var(--s-l);margin:0 0 4px}
+.datos h3{font-size:var(--s-m);margin:26px 0 6px}
+.datos .sub{font-size:var(--s-xs);margin-bottom:10px}
+.ppto-doc{padding:8px 0;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-end;justify-content:space-between;background-image:radial-gradient(circle,var(--ink) .5px,transparent .7px);background-size:4px 2px;background-repeat:repeat-x;background-position:0 100%}
+.ppto-doc b{display:block;font-size:var(--s-m)}
+.ppto-doc span{display:block;font-size:var(--s-xs);margin:2px 0 0}
+.ppto-doc .pem{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.tabla{overflow-x:auto}
+.tabla table{border-collapse:collapse;width:100%;min-width:520px;font-size:var(--s-s);font-variant-numeric:tabular-nums}
+.tabla th{text-align:left;font-weight:700;padding:4px 10px 4px 0;border-bottom:.5px solid var(--ink);white-space:nowrap}
+.tabla td{padding:4px 10px 4px 0;vertical-align:middle;background-image:radial-gradient(circle,var(--ink) .5px,transparent .7px);background-size:4px 2px;background-repeat:repeat-x;background-position:0 100%}
+.tabla td.n,.tabla th.n{text-align:right;white-space:nowrap}
+.tabla tr.cap td{font-weight:700;padding-top:14px}
+.tabla tr.fila-tipo{cursor:pointer}
+.tabla tr.fila-tipo:hover td{background-color:var(--accent-soft)}
+.tabla tr.total td{font-weight:700;background-image:none;border-top:.5px solid var(--ink)}
+.tabla input{width:84px;border:.5px solid var(--ink);background:var(--paper);padding:2px 4px;text-align:right;font-variant-numeric:tabular-nums;border-radius:0}
+#load{position:absolute;inset:0;display:grid;place-items:center;background:var(--paper);z-index:9;font-size:var(--s-s)}
+.panel-toggle{display:none}
+@media (max-width:820px){
+  .main{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  .panel{border-left:0;border-top:.5px solid var(--rule);max-height:42vh;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .panel.cerrado{display:none}
+  .panel-toggle{display:inline-block}
+  .estado,header .sp{display:none}
+  header{grid-template-columns:minmax(0,1fr)}
+  header .barra{gap:8px;overflow-x:auto;padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .acciones.en-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:4px 0 14px;margin-bottom:2px}
+  header select{max-width:110px}
+  .rotulo{left:24px;bottom:22px;max-width:75%}
+  .caja{left:16px;right:16px;bottom:16px}
+  #joy{left:20px;bottom:56px}
+}
+@media (min-width:821px){.acciones.en-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:0 0 12px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="marca">compañía <span>· visor</span></div>
+    <div class="barra">
+      <div class="tabs" id="tabs" role="group" aria-label="Modo" hidden>
+        <button data-t="3d" aria-pressed="true">3D</button>
+        <button data-t="med" aria-pressed="false">Mediciones</button>
+      </div>
+      <select id="selModelo" aria-label="Modelo"><option>Reforma de cocina y aseo · propuesta</option></select>
+      <div class="estado" id="estado">261102_base.3dm</div>
+      <div class="sp"></div>
+      <button class="btn panel-toggle" id="bPanel" aria-pressed="true">Panel</button>
+    </div>
+    <div class="acciones" id="acciones">
+      <button class="btn rojo" id="fab" aria-pressed="false" hidden>Nota +</button>
+      <button class="btn" id="tMed" aria-pressed="false">Medir</button>
+      <button class="btn" id="tWalk" aria-pressed="false">Pasear</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="vista" id="vista">
+      <div id="app"></div>
+      <div id="pins"></div>
+      <svg class="aspa" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="0.6" fill="none"/></svg>
+      <div class="esq a"></div><div class="esq b"></div>
+      <div class="rotulo" id="rotulo">Compañía · reforma de cocina y aseo<span id="sub">Conjunto</span></div>
+      <div id="joy" hidden><i></i></div>
+      <div class="toast" id="hint" style="opacity:0">Toca un elemento para ver qué es</div>
+
+      <form id="composer" class="caja" hidden>
+        <div class="meta" id="cMeta"></div>
+        <textarea id="cText" placeholder="Qué hay que cambiar aquí. Ej.: bajar esta balda 5 cm" maxlength="2000" aria-label="Texto de la nota"></textarea>
+        <div class="fila"><button type="button" class="btn" id="cCancel">Cancelar</button><button type="submit" class="btn on" id="cSave">Guardar nota</button></div>
+      </form>
+      <div id="card" class="caja" role="dialog" aria-label="Nota" hidden>
+        <div class="meta" id="kMeta"></div>
+        <div class="txt" id="kText"></div>
+        <div class="fila"><button class="btn rojo" id="kDel" hidden>Borrar</button><button class="btn" id="kState"></button><button class="btn on" id="kClose">Cerrar</button></div>
+      </div>
+
+      <section class="datos" id="med" hidden aria-label="Mediciones y presupuesto">
+        <h2>Compañía · Mediciones y presupuesto</h2>
+        <div class="sub" id="medSub"></div>
+        <div class="ppto-doc">
+          <div><b>Presupuesto de ejecución material (PEM)</b><span class="pem" id="pemT">0,00 €</span></div>
+          <div class="fila"><label class="chk"><input type="checkbox" id="mVis" checked><span>Medir solo lo visible en 3D</span></label><button class="btn" id="xls">Excel</button></div>
+        </div>
+        <div class="tabla"><table id="ptab"></table></div>
+        <p class="nota">Las cantidades salen de la geometría de Rhino: muros y tabiques como media de sus caras verticales, con los huecos descontados; pavimentos y encimeras por su cara superior; alicatados y vidrios por su cara mayor; muebles, sanitarios y luminarias por unidades. Los precios quedan guardados en el visor para todos los que tengan acceso.</p>
+      </section>
+
+      <div id="load"><span id="lt">Cargando el modelo…</span></div>
+    </div>
+
+    <aside class="panel" id="panel" aria-label="Panel">
+      <div class="sec">
+        <h3>Vista</h3>
+        <div class="fila" id="style" role="group" aria-label="Estilo">
+          <button class="btn" data-s="linea" aria-pressed="true">Línea</button>
+          <button class="btn" data-s="masa" aria-pressed="false">Masa</button>
+          <button class="btn" data-s="material" aria-pressed="false">Material</button>
+        </div>
+        <div class="fila">
+          <select id="vsel" aria-label="Cámara">
+            <option value="">Vista libre</option>
+            <option value="axSE">Axonometría SE</option><option value="axSO">Axonometría SO</option>
+            <option value="axNE">Axonometría NE</option><option value="axNO">Axonometría NO</option>
+            <option value="planta">Planta</option>
+            <option value="alzN">Alzado norte</option><option value="alzS">Alzado sur</option>
+            <option value="alzE">Alzado este (fachada)</option><option value="alzO">Alzado oeste</option>
+          </select>
+          <button class="btn" id="bPersp" aria-pressed="false">Perspectiva</button>
+          <button class="btn" id="bFit">Encuadrar</button>
+        </div>
+        <div class="fila" id="qv" role="group" aria-label="Plantas rápidas">
+          <button class="btn" data-v="ext" aria-pressed="false">Conjunto</button>
+          <button class="btn" data-v="coc" aria-pressed="false">Cocina</button>
+          <button class="btn" data-v="aseo" aria-pressed="false">Aseo</button>
+        </div>
+      </div>
+
+            <div class="sec">
+        <h3>Sección</h3>
+        <div class="campo"><label class="chk"><input type="checkbox" id="cH"> Altura</label><input type="range" id="rH" min="0.05" max="2.4" step="0.01" value="1.50" aria-label="Altura de corte"><output id="oH">1,50</output></div>
+        <div class="campo"><label class="chk" title="Corte en dirección este-oeste"><input type="checkbox" id="cL"> Corte N-S</label><input type="range" id="rL" min="-3.6" max="3.6" step="0.01" value="0" aria-label="Corte norte-sur"><output id="oL">0,00</output></div>
+        <div class="campo"><label class="chk" title="Corte en dirección norte-sur"><input type="checkbox" id="cT"> Corte E-O</label><input type="range" id="rT" min="-8.6" max="8.6" step="0.01" value="5" aria-label="Corte este-oeste"><output id="oT">5,00</output></div>
+        <div class="fila"><label class="chk"><input type="checkbox" id="cF"> Ver el otro lado</label></div>
+      </div>
+
+      <div class="sec"><h3>Capas</h3><div class="lista" id="layersBox"></div></div>
+      <div class="sec"><h3>Estancias</h3><div class="lista" id="plantasBox"></div></div>
+
+            <div class="sec" id="secEl"><h3>Elemento</h3><div class="insp" id="elBox">Toca un elemento para ver qué es.</div></div>
+
+      <div class="sec">
+        <h3>Medir</h3>
+        <div class="fila"><label class="chk"><input type="checkbox" id="cSnap" checked> Imán a vértices</label><button class="lnk" id="mClear">Borrar medidas</button></div>
+        <table class="med" id="mList"></table>
+        <p class="nota">Pulsa «Medir» y toca dos puntos.</p>
+      </div>
+
+      <div class="sec" id="secNotas" hidden>
+        <h3>Notas <span class="mini" id="nCount"></span></h3>
+        <div class="fila" id="nFilt" role="group" aria-label="Filtro"><button class="btn" data-f="open" aria-pressed="true">Abiertas</button><button class="btn" data-f="all" aria-pressed="false">Todas</button></div>
+        <div id="nList"></div>
+      </div>
+
+      <div class="sec" id="secMedVis" hidden>
+        <h3>Mediciones de lo visible</h3>
+        <table class="med" id="visMed"></table>
+        <div class="fila" style="margin-top:6px"><button class="lnk" id="goMed">Ver mediciones y presupuesto</button></div>
+      </div>
+
+      <div class="sec">
+        <h3>Exportar la vista</h3>
+        <div class="fila" id="scale">
+          <button class="btn" data-k="50" aria-pressed="false">1:50</button><button class="btn" data-k="100" aria-pressed="true">1:100</button><button class="btn" data-k="200" aria-pressed="false">1:200</button><button class="btn" data-k="500" aria-pressed="false">1:500</button><button class="btn" data-k="A3" aria-pressed="false">Ajustar a A3</button>
+        </div>
+        <div class="fila"><button class="btn" id="eSvg">SVG a línea</button><button class="btn" id="ePng">PNG</button></div>
+        <p class="nota" id="eNote"></p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+
+<script type="application/json" id="meta">{"objs":[{"n":"","l":"Muros","pl":"General","c":[238,236,232],"m":{"dx":16.904,"dy":7.101,"dz":2.4,"largo":16.904,"area":233.7517,"cara":12.1488,"vert":231.2637,"sup":1.8328},"us":{"material":"Pintura blanca mate"},"id":"d3cf2a8d-1cce-499d-9c10-8e6038b7e5b6"},{"n":"","l":"Muros","pl":"General","c":[238,236,232],"m":{"dx":4.844,"dy":1.32,"dz":2.4,"largo":4.844,"area":14.7933,"cara":11.6253,"vert":14.7933},"us":{"material":"Pintura blanca mate"},"id":"c1290960-d8b1-4fb8-9be7-58710d126676"},{"n":"","l":"Muros","pl":"General","c":[238,236,232],"m":{"dx":10.667,"dy":4.809,"dz":2.4,"largo":10.667,"area":40.0243,"cara":11.4475,"vert":40.0243},"us":{"material":"Pintura blanca mate"},"id":"590073f8-a0ab-471b-aea7-3a9ff37e0ca5"},{"n":"","l":"Muros","pl":"General","c":[238,236,232],"m":{"dx":0.615,"dy":1.29,"dz":2.4,"largo":2.4,"area":8.0511,"cara":3.06,"vert":8.0511},"us":{"material":"Pintura blanca mate"},"id":"615d935a-4d12-4501-9f6b-30abf865fca9"},{"n":"","l":"Estructura","pl":"General","c":[238,236,232],"m":{"dx":0.122,"dy":0.152,"dz":2.4,"largo":2.4,"vol":0.0432,"area":1.332,"cara":0.36,"vert":1.296,"sup":0.036},"us":{"material":"Pintura blanca mate"},"id":"5cc62c28-2261-44e9-a5e0-e4ff70a5a486"},{"n":"","l":"Estructura","pl":"General","c":[238,236,232],"m":{"dx":0.122,"dy":0.152,"dz":2.4,"largo":2.4,"vol":0.0432,"area":1.332,"cara":0.36,"vert":1.296,"sup":0.036},"us":{"material":"Pintura blanca mate"},"id":"b27b1338-db3e-4270-a34a-cd2360505328"},{"n":"Suelo acabado +0,00","l":"Suelo +0,00","pl":"General","c":[196,190,180],"m":{"dx":17.304,"dy":9.459,"largo":17.304,"area":163.6753,"cara":163.6753,"sup":163.6753},"us":{"material":"Suelo microcemento claro"},"id":"00a26a91-c582-406b-a8db-e210c345530f"},{"n":"Techo acabado +2,40 (altura libre)","l":"Techo +2,40","pl":"General","c":[245,244,241],"m":{"dx":17.304,"dy":9.459,"largo":17.304,"area":159.3202,"cara":159.3202,"sup":159.3202},"us":{"material":"Techo blanco"},"id":"fc3ebaae-c681-443f-92d4-49bbf238000a"},{"n":"Aseo - puerta - bisagra oculta","l":"Carpintería","pl":"Aseo","c":[170,172,175],"m":{"dx":0.003,"dy":0.02,"dz":0.1,"largo":0.1,"area":0.0047,"cara":0.002,"vert":0.0046,"sup":0.0001},"us":{"material":"Acero inoxidable"},"id":"b22cf8e4-c965-453f-a479-23f017471cdf"},{"n":"Aseo - puerta - bisagra oculta","l":"Carpintería","pl":"Aseo","c":[170,172,175],"m":{"dx":0.003,"dy":0.02,"dz":0.1,"largo":0.1,"area":0.0047,"cara":0.002,"vert":0.0046,"sup":0.0001},"us":{"material":"Acero inoxidable"},"id":"e2a37ce7-20e6-465e-8f62-ede0ea6c4a5e"},{"n":"Aseo - puerta - bisagra oculta","l":"Carpintería","pl":"Aseo","c":[170,172,175],"m":{"dx":0.003,"dy":0.02,"dz":0.1,"largo":0.1,"area":0.0047,"cara":0.002,"vert":0.0046,"sup":0.0001},"us":{"material":"Acero inoxidable"},"id":"3afb7a58-8163-46ab-850e-b74c4f4b68af"},{"n":"Aseo - puerta - manilla","l":"Carpintería","pl":"Aseo","c":[170,172,175],"m":{"dx":0.13,"dy":0.012,"dz":0.018,"largo":0.13,"area":0.0082,"cara":0.0023,"vert":0.0051,"sup":0.0016},"us":{"material":"Acero inoxidable"},"id":"e9994aea-d8da-45d2-bd06-696a30ff7e41"},{"n":"Aseo - puerta - manilla","l":"Carpintería","pl":"Aseo","c":[170,172,175],"m":{"dx":0.13,"dy":0.012,"dz":0.018,"largo":0.13,"area":0.0082,"cara":0.0023,"vert":0.0051,"sup":0.0016},"us":{"material":"Acero inoxidable"},"id":"19b6be3d-36e7-4786-bb22-3401f3d96545"},{"n":"Aseo - puerta - manilla eje","l":"Carpintería","pl":"Aseo","c":[170,172,175],"m":{"dx":0.018,"dy":0.09,"dz":0.018,"largo":0.09,"area":0.0056,"cara":0.0051,"vert":0.0005},"us":{"material":"Acero inoxidable"},"id":"d7e91083-e117-4f20-a162-5acd098c1d8e"},{"n":"Aseo - puerta - hoja enrasada","l":"Carpintería","pl":"Aseo","c":[186,146,104],"m":{"dx":0.913,"dy":0.04,"dz":2.392,"largo":2.392,"vol":0.0874,"area":4.6322,"cara":2.1839,"vert":4.5592,"sup":0.0365},"us":{"material":"Madera puerta corredera"},"id":"fdb5a494-50d3-46bb-8ae8-4bc026193f1a"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.076,"dy":0.701,"dz":0.005,"largo":0.701,"vol":0.0002,"area":0.0774,"cara":0.035,"vert":0.0075,"sup":0.035},"us":{"material":"Mortero blanco"},"id":"71fdcedc-86e5-4159-b884-c5f51d69ad95"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.076,"dy":0.701,"dz":0.01,"largo":0.701,"vol":0.0003,"area":0.0849,"cara":0.035,"vert":0.015,"sup":0.035},"us":{"material":"Mortero blanco"},"id":"8ad331ad-f0d8-41aa-b512-b743b286ecdf"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.076,"dy":0.701,"dz":0.01,"largo":0.701,"vol":0.0003,"area":0.0849,"cara":0.035,"vert":0.015,"sup":0.035},"us":{"material":"Mortero blanco"},"id":"a180ee04-ddde-4863-8c79-0425e1f85876"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.076,"dy":0.701,"dz":0.01,"largo":0.701,"vol":0.0003,"area":0.0849,"cara":0.035,"vert":0.015,"sup":0.035},"us":{"material":"Mortero blanco"},"id":"792c1408-9f45-4b6b-a952-5f24f5d298ca"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.076,"dy":0.701,"dz":0.01,"largo":0.701,"vol":0.0003,"area":0.0849,"cara":0.035,"vert":0.015,"sup":0.035},"us":{"material":"Mortero blanco"},"id":"47a8b3b5-2f41-4c4f-bab5-580b3a921982"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.076,"dy":0.701,"dz":0.01,"largo":0.701,"vol":0.0003,"area":0.0849,"cara":0.035,"vert":0.015,"sup":0.035},"us":{"material":"Mortero blanco"},"id":"040cbbe1-2376-4b1e-9940-21b20756448e"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.076,"dy":0.701,"dz":0.01,"largo":0.701,"vol":0.0003,"area":0.0849,"cara":0.035,"vert":0.015,"sup":0.035},"us":{"material":"Mortero blanco"},"id":"7ce66a68-2c0c-4146-8e25-4f673551f2c1"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.076,"dy":0.701,"dz":0.005,"largo":0.701,"vol":0.0002,"area":0.0774,"cara":0.035,"vert":0.0075,"sup":0.035},"us":{"material":"Mortero blanco"},"id":"9b2f4c69-642d-46cc-8638-4cf72b532d7f"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.05,"dy":0.007,"dz":0.82,"largo":0.82,"vol":0.0002,"area":0.0907,"cara":0.041,"vert":0.0902,"sup":0.0003},"us":{"material":"Mortero blanco"},"id":"8fe191da-760f-4221-a304-608fd0e0ddfd"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.05,"dy":0.012,"dz":0.82,"largo":0.82,"vol":0.0004,"area":0.0994,"cara":0.041,"vert":0.0984,"sup":0.0005},"us":{"material":"Mortero blanco"},"id":"3f3a52ea-bbf9-412c-90e5-b4a631dea9a3"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.05,"dy":0.012,"dz":0.82,"largo":0.82,"vol":0.0004,"area":0.0994,"cara":0.041,"vert":0.0984,"sup":0.0005},"us":{"material":"Mortero blanco"},"id":"93bd0246-2a89-4c1d-93e0-0561d59526fe"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.05,"dy":0.012,"dz":0.82,"largo":0.82,"vol":0.0004,"area":0.0994,"cara":0.041,"vert":0.0984,"sup":0.0005},"us":{"material":"Mortero blanco"},"id":"9e5dd13e-f1ca-40ed-8661-02723fcc8767"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.05,"dy":0.012,"dz":0.82,"largo":0.82,"vol":0.0004,"area":0.0994,"cara":0.041,"vert":0.0984,"sup":0.0005},"us":{"material":"Mortero blanco"},"id":"2c831114-780a-47c6-b478-509a2d84e2e5"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.05,"dy":0.012,"dz":0.82,"largo":0.82,"vol":0.0004,"area":0.0994,"cara":0.041,"vert":0.0984,"sup":0.0005},"us":{"material":"Mortero blanco"},"id":"46708a15-c892-4f2e-988d-7e8fa2d28c2f"},{"n":"V-Cocina - pavés juntas","l":"Carpintería","pl":"Cocina","c":[232,230,224],"m":{"dx":0.05,"dy":0.007,"dz":0.82,"largo":0.82,"vol":0.0002,"area":0.0907,"cara":0.041,"vert":0.0902,"sup":0.0003},"us":{"material":"Mortero blanco"},"id":"23c2d387-026f-45e4-8fa2-287d52569400"},{"n":"Panel madera sobre encimera (continuación corredera)","l":"Carpintería","pl":"Cocina","c":[186,146,104],"m":{"dx":0.659,"dy":0.02,"dz":1.5,"largo":1.5,"vol":0.0198,"area":2.0641,"cara":0.9889,"vert":2.0377,"sup":0.0132},"us":{"material":"Madera puerta corredera"},"id":"e15e4c84-940d-4ff7-bbab-594079b57a68"},{"n":"Columnas - panel fijo (aparcamiento corredera)","l":"Carpintería","pl":"Cocina","c":[240,239,235],"m":{"dx":0.868,"dy":0.02,"dz":2.39,"largo":2.39,"vol":0.0415,"area":4.2818,"cara":2.0757,"vert":4.247,"sup":0.0174},"us":{"material":"Blanco mate"},"id":"1f632be7-f93f-421a-a35e-080e2562f1ba"},{"n":"Columnas - puerta FR","l":"Carpintería","pl":"Cocina","c":[240,239,235],"m":{"dx":0.597,"dy":0.02,"dz":2.39,"largo":2.39,"vol":0.0285,"area":2.9731,"cara":1.4268,"vert":2.9493,"sup":0.0119},"us":{"material":"Blanco mate"},"id":"e472dcdb-2c70-4e2e-98be-f9b9a11568cb"},{"n":"Columnas - puerta LV+SC dcha","l":"Carpintería","pl":"Cocina","c":[240,239,235],"m":{"dx":0.446,"dy":0.02,"dz":2.39,"largo":2.39,"vol":0.0213,"area":2.2453,"cara":1.0659,"vert":2.2275,"sup":0.0089},"us":{"material":"Blanco mate"},"id":"d1a10426-9806-4b5f-aa7a-2ecd29ea7ff3"},{"n":"Columnas - puerta LV+SC izq","l":"Carpintería","pl":"Cocina","c":[240,239,235],"m":{"dx":0.448,"dy":0.02,"dz":2.39,"largo":2.39,"vol":0.0214,"area":2.2525,"cara":1.0695,"vert":2.2346,"sup":0.0089},"us":{"material":"Blanco mate"},"id":"e8333ae5-e183-4454-a461-094b4552ccc2"},{"n":"Puerta corredera despensa (cerrada)","l":"Carpintería","pl":"Despensa","c":[186,146,104],"m":{"dx":0.9,"dy":0.04,"dz":2.39,"largo":2.39,"vol":0.086,"area":4.5652,"cara":2.151,"vert":4.4932,"sup":0.036},"us":{"material":"Madera puerta corredera"},"id":"b896c963-6877-4c7c-8a85-bd81f56e0888"},{"n":"V-Cocina - montante marco","l":"Carpintería","pl":"Cocina","c":[225,225,222],"m":{"dx":0.086,"dy":0.701,"dz":0.37,"largo":0.701,"vol":0.0055,"area":0.4182,"cara":0.0915,"vert":0.2599,"sup":0.0791},"us":{"material":"Aluminio lacado"},"id":"a495754f-79b1-4f0c-88be-a827a7382539"},{"n":"V-Cocina patio - marco","l":"Carpintería","pl":"Cocina","c":[225,225,222],"m":{"dx":0.062,"dy":0.79,"dz":0.85,"largo":0.85,"vol":0.0092,"area":0.6776,"cara":0.154,"vert":0.5,"sup":0.0888},"us":{"material":"Aluminio lacado"},"id":"b6ca810f-ecbf-4298-8cb9-ba3dc9a371a5"},{"n":"V-Baño - marco","l":"Carpintería","pl":"Aseo","c":[225,225,222],"m":{"dx":0.069,"dy":0.451,"dz":0.65,"largo":0.65,"vol":0.0049,"area":0.408,"cara":0.0816,"vert":0.3096,"sup":0.0492},"us":{"material":"Aluminio lacado"},"id":"56a21951-c6f7-4ca0-a3f9-f17ad829866c"},{"n":"Aseo - mampara - vidrio","l":"Vidrio","pl":"Aseo","c":[220,235,240],"m":{"dx":0.008,"dy":0.493,"dz":2.385,"largo":2.385,"vol":0.0094,"area":2.3977,"cara":1.1758,"vert":2.3898,"sup":0.0039},"us":{"material":"Vidrio"},"id":"faff1401-28c4-4b3b-a724-6ef37961fbd0"},{"n":"V-Cocina - montante vidrio","l":"Vidrio","pl":"Cocina","c":[220,235,240],"m":{"dx":0.023,"dy":0.619,"dz":0.27,"largo":0.619,"area":0.1673,"cara":0.1673,"vert":0.1673},"us":{"material":"Vidrio"},"id":"c4e117a6-ecac-42c1-905a-e70a6c4511b9"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"1e0f3769-1719-409d-b7e3-8af3606744c7"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"8721d006-f18a-473f-8895-7ff8abf5dbeb"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"3d3bb36d-b9cb-4864-a9b1-ca578775adb3"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"caef693b-88c3-4da8-9c6e-4cb2518f6a95"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"3eb20e24-bee9-4168-9ac1-8540cef9a910"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"938b08a8-5e5e-4d00-ab64-56449cdf86e1"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"9b1dfaa2-330c-454a-8567-a60d57eef011"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"40d0bb20-5e6a-48f0-b5df-58c248ed179a"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"a08031f2-39c5-49a5-85f8-0dba406e936d"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"d0268e10-4151-43d4-bf33-ce95c156bd2c"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"56b68dfb-10c8-456d-9ae0-ae0a703e943a"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"aedaf7fc-915b-4d7f-932c-45e0ecd8ba6b"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"976d200b-0123-42b1-9585-9ccead8cda19"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"323a9802-71e7-4902-b58b-757372f5768e"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"439d38b0-08a7-4502-bfe9-ce89546e4384"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"e2a7e65d-1ab3-4f09-8099-56750284eea2"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"c034822c-b976-4ab1-95cb-b5cd816238bc"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"cbf0a90c-eb46-4484-8b22-dcc33f343df5"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"42d39d07-85a2-441f-bae3-1e9220f4078a"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"c2518686-1872-4ed3-b586-bb34dc9f0fe1"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"cad1e82f-e6f6-499a-a2fe-ce54d34b8b84"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"cc709d79-5976-4681-aa56-997f89fa8f37"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"691d76c4-72e2-418a-97fd-7ede8c0b0176"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"4d59490a-518c-4433-bfd9-fe4386433644"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"bef81bc5-1d82-476d-a90b-93ae3eb806f6"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"ba3774f9-1720-4e1a-ac50-ab2a853c47df"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"80f2a50b-056f-47de-80e9-572b263723a0"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"4dbef985-3ca1-468d-a221-91b9c7257dbb"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"3adcfc4d-870a-4813-9b1a-d5bd9671feb2"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"7c1f9e0a-2643-4aeb-8023-59fcfa7ad40a"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"4cda9740-af06-4a1c-8142-b1635000bd33"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"7cb8a898-25f3-4f58-b39f-0256278b4014"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"275f5e07-cc5d-4def-a829-5982ca0cb1ce"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"2c1a9c9a-3dbd-4bba-9de5-01cd032910fc"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"9ac73bab-96e3-4837-a831-af296e24c4a9"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"327de9d1-a060-4134-b1f6-dc5d64af654b"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"314825d8-6e4e-47cc-a0e4-6da8ca3f7599"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"598f7a30-e4d3-458e-b92d-95d7aa05da3e"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"6a5104df-c32a-4ee0-8e8d-c94aacb8d3b8"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"27ec7f99-b515-4091-954a-d109728be9bd"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"d3e493b7-8eb1-49f9-b935-7442424214ba"},{"n":"V-Cocina - pavés","l":"Vidrio","pl":"Cocina","c":[225,238,236],"m":{"dx":0.084,"dy":0.109,"dz":0.107,"largo":0.109,"vol":0.0009,"area":0.057,"cara":0.0114,"vert":0.04,"sup":0.0085},"us":{"material":"Pavés vidrio translúcido"},"id":"9053b9bb-bdcb-47d5-9b97-72ac0478b53f"},{"n":"V-Cocina patio - vidrio","l":"Vidrio","pl":"Cocina","c":[220,235,240],"m":{"dx":0.002,"dy":0.69,"dz":0.75,"largo":0.75,"area":0.5175,"cara":0.5175,"vert":0.5175},"us":{"material":"Vidrio"},"id":"7d752908-f6c7-4da7-8b77-f8a79a194da7"},{"n":"V-Baño - vidrio","l":"Vidrio","pl":"Aseo","c":[220,235,240],"m":{"dx":0.007,"dy":0.37,"dz":0.57,"largo":0.57,"area":0.211,"cara":0.211,"vert":0.211},"us":{"material":"Vidrio"},"id":"1a96738d-5122-41fc-92cd-051a094a82df"},{"n":"Aseo - espejo","l":"Mobiliario","pl":"Aseo","c":[205,210,214],"m":{"dx":1.148,"dy":0.01,"dz":1.4,"largo":1.4,"vol":0.0161,"area":3.2654,"cara":1.6072,"vert":3.2424,"sup":0.0115},"us":{"material":"Espejo"},"id":"48653e58-6dbf-40bb-97ce-3347ec45369f"},{"n":"Aseo - mueble lavabo","l":"Mobiliario","pl":"Aseo","c":[240,239,235],"m":{"dx":1.198,"dy":0.5,"dz":0.33,"largo":1.198,"vol":0.1885,"area":2.4205,"cara":0.599,"vert":1.2225,"sup":0.4972},"us":{"material":"Blanco mate"},"id":"8627c894-9ff0-46a9-b0f5-dd869067f18f"},{"n":"Aseo - armario columna - puerta 2","l":"Mobiliario","pl":"Aseo","c":[240,239,235],"m":{"dx":0.02,"dy":0.638,"dz":2.296,"largo":2.296,"vol":0.0293,"area":3.0447,"cara":1.4637,"vert":3.0192,"sup":0.0127},"us":{"material":"Blanco mate"},"id":"6aa17f5f-4d0f-4ec2-aa14-24a46e9747e0"},{"n":"Aseo - armario columna - puerta 1","l":"Mobiliario","pl":"Aseo","c":[240,239,235],"m":{"dx":0.02,"dy":0.638,"dz":2.296,"largo":2.296,"vol":0.0293,"area":3.0447,"cara":1.4637,"vert":3.0192,"sup":0.0128},"us":{"material":"Blanco mate"},"id":"d5206eb5-42c1-44c6-a02b-2ec7d7a4553d"},{"n":"Aseo - armario columna - zócalo","l":"Mobiliario","pl":"Aseo","c":[240,239,235],"m":{"dx":0.375,"dy":1.28,"dz":0.1,"largo":1.28,"vol":0.048,"area":1.291,"cara":0.48,"vert":0.331,"sup":0.48},"us":{"material":"Blanco mate"},"id":"a025ecc8-e9d5-4181-ba5e-9cb30f66e21a"},{"n":"Aseo - armario columna - cuerpo","l":"Mobiliario","pl":"Aseo","c":[240,239,235],"m":{"dx":0.405,"dy":1.28,"dz":2.3,"largo":2.3,"vol":1.1923,"area":8.7878,"cara":2.944,"vert":7.751,"sup":0.5184},"us":{"material":"Blanco mate"},"id":"81967a09-cf76-41d7-98ee-9e5518ed1090"},{"n":"Encimera 1 - alto 60 (sobre HM)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.598,"dy":0.3,"dz":0.9,"largo":0.9,"vol":0.1616,"area":1.9764,"cara":0.5386,"vert":1.6173,"sup":0.1795},"us":{"material":"Blanco mate"},"id":"66832046-fb54-4a62-b788-bd8291f89653"},{"n":"Encimera 1 - alto 80 (sobre V+C+H)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.799,"dy":0.3,"dz":0.9,"largo":0.9,"vol":0.2156,"area":2.4564,"cara":0.7187,"vert":1.9773,"sup":0.2396},"us":{"material":"Blanco mate"},"id":"4007b704-843c-463e-8834-68dac72016a0"},{"n":"Encimera 1 (fuegos)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":1.86,"dy":0.58,"dz":0.03,"largo":1.86,"vol":0.0318,"area":2.2672,"cara":1.0604,"vert":0.1464,"sup":1.0604},"us":{"material":"Blanco mate"},"id":"a8e144fe-841f-4a1f-acdd-9ec461935f1b"},{"n":"Encimera 1 - zócalo","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":1.4,"dy":0.51,"dz":0.1,"largo":1.4,"vol":0.0714,"area":1.81,"cara":0.714,"vert":0.382,"sup":0.714},"us":{"material":"Blanco mate"},"id":"6f1b5ff1-01b1-4bbb-9e1c-ab45f5581918"},{"n":"Encimera 1 - bajo 60 (HM)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.598,"dy":0.56,"dz":0.77,"largo":0.77,"vol":0.2581,"area":2.4544,"cara":0.4608,"vert":1.7841,"sup":0.3352},"us":{"material":"Blanco mate"},"id":"ea0b0238-1bee-4c70-b091-2adb5108087c"},{"n":"Encimera 1 - bajo 80 (V+C+H)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.799,"dy":0.56,"dz":0.77,"largo":0.799,"vol":0.3443,"area":2.9864,"cara":0.6148,"vert":2.0921,"sup":0.4472},"us":{"material":"Blanco mate"},"id":"a5f0d2e5-eb65-4754-9925-92d3d75b9379"},{"n":"Hornacina banco - balda 2","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.3,"dy":0.46,"dz":0.04,"largo":0.46,"vol":0.0055,"area":0.3368,"cara":0.138,"vert":0.0608,"sup":0.138},"us":{"material":"Blanco mate"},"id":"5add3559-c657-4210-a352-d67727af523e"},{"n":"Hornacina banco - balda 3","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.3,"dy":0.46,"dz":0.04,"largo":0.46,"vol":0.0055,"area":0.3368,"cara":0.138,"vert":0.0608,"sup":0.138},"us":{"material":"Blanco mate"},"id":"62006acb-d877-4031-828c-e130ccb8a28c"},{"n":"Hornacina banco - balda 4","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.3,"dy":0.46,"dz":0.04,"largo":0.46,"vol":0.0055,"area":0.3368,"cara":0.138,"vert":0.0608,"sup":0.138},"us":{"material":"Blanco mate"},"id":"37503199-ed09-438b-9b2d-80e2f6d9ff1d"},{"n":"Hornacina banco - balda 5","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.3,"dy":0.46,"dz":0.04,"largo":0.46,"vol":0.0055,"area":0.3368,"cara":0.138,"vert":0.0608,"sup":0.138},"us":{"material":"Blanco mate"},"id":"ff53655a-0ff1-4a7d-9f5c-fcd63dd077fa"},{"n":"Taburete 2 (roble y cuerda, h60)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.44,"dy":0.44,"dz":0.6,"largo":0.6},"us":{"material":"Blanco mate","bloque":"Taburete roble y cuerda (h60)"},"id":"b592a551-46c3-4713-bb97-0ee00ed12050"},{"n":"Taburete 1 (roble y cuerda, h60)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.44,"dy":0.44,"dz":0.6,"largo":0.6},"us":{"material":"Blanco mate","bloque":"Taburete roble y cuerda (h60)"},"id":"7a138372-4f07-46c7-9a27-0bce521a25e7"},{"n":"Mesa alta - módulo 55","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.8,"dy":0.793,"dz":0.55,"largo":0.8,"vol":0.3491,"area":3.0223,"cara":0.6348,"vert":1.7528,"sup":0.6348},"us":{"material":"Blanco mate"},"id":"58a79cd9-3f64-49f7-bc0a-629b0ace0434"},{"n":"Mesa alta - módulo 55 - zócalo","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.7,"dy":0.743,"dz":0.1,"largo":0.743,"vol":0.052,"area":1.3295,"cara":0.5204,"vert":0.2887,"sup":0.5204},"us":{"material":"Blanco mate"},"id":"945e6ba5-563a-41db-9b11-8ecf9bed0035"},{"n":"Despensa - balda 30 (z 195)","l":"Mobiliario","pl":"Despensa","c":[240,239,235],"m":{"dx":0.3,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0108,"area":0.81,"cara":0.36,"vert":0.09,"sup":0.36},"us":{"material":"Blanco mate"},"id":"90738b7a-f521-47f5-9f3d-e25d1c6d3d78"},{"n":"Despensa - balda 60 (z 195)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.6,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0216,"area":1.548,"cara":0.72,"vert":0.108,"sup":0.72},"us":{"material":"Blanco mate"},"id":"34abb55a-b358-47f3-b6c6-5393817b8b9a"},{"n":"Despensa - balda 30 (z 160)","l":"Mobiliario","pl":"Despensa","c":[240,239,235],"m":{"dx":0.3,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0108,"area":0.81,"cara":0.36,"vert":0.09,"sup":0.36},"us":{"material":"Blanco mate"},"id":"30bc6e9f-5b71-420a-9e20-89d758e87511"},{"n":"Despensa - balda 60 (z 160)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.6,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0216,"area":1.548,"cara":0.72,"vert":0.108,"sup":0.72},"us":{"material":"Blanco mate"},"id":"3c7ccedb-ff42-4e4f-9364-0b0634d319a3"},{"n":"Despensa - balda 30 (z 125)","l":"Mobiliario","pl":"Despensa","c":[240,239,235],"m":{"dx":0.3,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0108,"area":0.81,"cara":0.36,"vert":0.09,"sup":0.36},"us":{"material":"Blanco mate"},"id":"d916d911-007e-488b-8f2f-26da787e2aa1"},{"n":"Despensa - balda 60 (z 125)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.6,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0216,"area":1.548,"cara":0.72,"vert":0.108,"sup":0.72},"us":{"material":"Blanco mate"},"id":"e0d61af7-a92d-4f88-badc-709f9403163b"},{"n":"Despensa - balda 30 (z 90)","l":"Mobiliario","pl":"Despensa","c":[240,239,235],"m":{"dx":0.3,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0108,"area":0.81,"cara":0.36,"vert":0.09,"sup":0.36},"us":{"material":"Blanco mate"},"id":"22012a12-1fc8-4fd5-adfa-018f91352f9f"},{"n":"Despensa - balda 60 (z 90)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.6,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0216,"area":1.548,"cara":0.72,"vert":0.108,"sup":0.72},"us":{"material":"Blanco mate"},"id":"54e95aa5-ed9a-480a-82b5-0023e3d3a0d7"},{"n":"Despensa - balda 30 (z 60)","l":"Mobiliario","pl":"Despensa","c":[240,239,235],"m":{"dx":0.3,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0108,"area":0.81,"cara":0.36,"vert":0.09,"sup":0.36},"us":{"material":"Blanco mate"},"id":"6195b4db-5d24-44c8-8604-7ce187e267d4"},{"n":"Despensa - balda 60 (z 60)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.6,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0216,"area":1.548,"cara":0.72,"vert":0.108,"sup":0.72},"us":{"material":"Blanco mate"},"id":"89faa147-dbbc-452b-b398-7f52166f14f4"},{"n":"Despensa - balda 30 (z 30)","l":"Mobiliario","pl":"Despensa","c":[240,239,235],"m":{"dx":0.3,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0108,"area":0.81,"cara":0.36,"vert":0.09,"sup":0.36},"us":{"material":"Blanco mate"},"id":"299c2151-a656-41c8-8db0-b19dd2110605"},{"n":"Despensa - balda 60 (z 30)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.6,"dy":1.2,"dz":0.03,"largo":1.2,"vol":0.0216,"area":1.548,"cara":0.72,"vert":0.108,"sup":0.72},"us":{"material":"Blanco mate"},"id":"2275b5d3-f629-4ca8-8011-99fd0d550a7e"},{"n":"Encimera 2 - alto hornacina CL","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.71,"dy":0.3,"dz":0.9,"largo":0.9,"vol":0.1907,"area":2.2353,"cara":0.6385,"vert":1.8115,"sup":0.2119},"us":{"material":"Blanco mate"},"id":"83b25ba9-7a5e-4031-9fa6-2282161838b5"},{"n":"Encimera 2 (fregadero)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.711,"dy":2.484,"dz":0.03,"largo":2.484,"vol":0.0444,"area":3.2102,"cara":1.4815,"vert":0.2472,"sup":1.4815},"us":{"material":"Blanco mate"},"id":"86dab434-753e-46d9-90f3-72b05f10d832"},{"n":"Encimera 2 - zócalo","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.53,"dy":1.904,"dz":0.1,"largo":1.904,"vol":0.1009,"area":2.505,"cara":1.0091,"vert":0.4868,"sup":1.0091},"us":{"material":"Blanco mate"},"id":"312f4bbe-4ad3-4748-acbf-dd77302445d5"},{"n":"Encimera 2 - bajo 60","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.58,"dy":0.599,"dz":0.77,"largo":0.77,"vol":0.2673,"area":2.5092,"cara":0.4608,"vert":1.8149,"sup":0.3471},"us":{"material":"Blanco mate"},"id":"66dbafa1-9f9b-48c6-8458-f9dde10f22bb"},{"n":"Encimera 2 - bajo 60 (LVV)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.58,"dy":0.597,"dz":0.77,"largo":0.77,"vol":0.2666,"area":2.5051,"cara":0.4597,"vert":1.8126,"sup":0.3463},"us":{"material":"Blanco mate"},"id":"4c29c893-2f9f-4684-b28c-2ae987522364"},{"n":"Encimera 2 - bajo 70 (F)","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.58,"dy":0.703,"dz":0.77,"largo":0.77,"vol":0.2754,"area":3.1068,"cara":0.5409,"vert":2.2919,"sup":0.1681},"us":{"material":"Blanco mate"},"id":"89e71181-e68c-4a68-bbd6-ae7e8509ca84"},{"n":"Hornacina encimera - balda 3","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.46,"dy":0.54,"dz":0.04,"largo":0.54,"vol":0.0099,"area":0.5768,"cara":0.2484,"vert":0.08,"sup":0.2484},"us":{"material":"Blanco mate"},"id":"6f48c9b4-b06e-4a15-9aed-7b0ce3a543e8"},{"n":"Hornacina encimera - balda 2","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.46,"dy":0.54,"dz":0.04,"largo":0.54,"vol":0.0099,"area":0.5768,"cara":0.2484,"vert":0.08,"sup":0.2484},"us":{"material":"Blanco mate"},"id":"57abb1b8-9833-4e2f-b100-3230c0c1592c"},{"n":"Hornacina encimera - balda 1","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.46,"dy":0.54,"dz":0.04,"largo":0.54,"vol":0.0099,"area":0.5768,"cara":0.2484,"vert":0.08,"sup":0.2484},"us":{"material":"Blanco mate"},"id":"b23db303-103b-4781-ae55-95965d2616f8"},{"n":"Hornacina banco - balda 1","l":"Mobiliario","pl":"Cocina","c":[240,239,235],"m":{"dx":0.3,"dy":0.46,"dz":0.04,"largo":0.46,"vol":0.0055,"area":0.3368,"cara":0.138,"vert":0.0608,"sup":0.138},"us":{"material":"Blanco mate"},"id":"c5789c09-d823-4c42-9c8a-44344ba9aa22"},{"n":"Mesa alta - tablero 2","l":"Mobiliario","pl":"Cocina","c":[228,211,180],"m":{"dx":2.737,"dy":0.397,"dz":0.035,"largo":2.737,"vol":0.038,"area":2.3906,"cara":1.0856,"vert":0.2194,"sup":1.0856},"us":{"material":"Abedul claro"},"id":"4382a3ee-b19e-4e35-b5ee-5ff112f6b074"},{"n":"Mesa alta - tablero 1 (lado banco)","l":"Mobiliario","pl":"Cocina","c":[228,211,180],"m":{"dx":2.737,"dy":0.397,"dz":0.035,"largo":2.737,"vol":0.038,"area":2.3906,"cara":1.0856,"vert":0.2194,"sup":1.0856},"us":{"material":"Abedul claro"},"id":"46a6fed2-0f3a-4100-98fe-e8526cc14e3b"},{"n":"Banco corrido - tablero","l":"Mobiliario","pl":"Cocina","c":[228,211,180],"m":{"dx":2.487,"dy":2.321,"dz":0.04,"largo":2.487,"vol":0.0862,"area":4.6927,"cara":2.1541,"vert":0.3845,"sup":2.1541},"us":{"material":"Abedul claro"},"id":"333a21c5-84fb-4ae6-b771-b2e7ea84c939"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.059,"dy":0.039,"dz":0.158,"largo":0.158,"vol":0.0002,"area":0.0201,"cara":0.0201,"vert":0.0201},"us":{"material":"Maniquí blanco"},"id":"c53a5490-57a8-4e9c-bf1c-27999785ef90"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.114,"dy":0.11,"dz":0.521,"largo":0.521,"vol":0.0025,"area":0.1347,"cara":0.1253,"vert":0.1253,"sup":0.007},"us":{"material":"Maniquí blanco"},"id":"8941aaec-cf8b-4615-8fe2-af52b9a61a43"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.237,"dy":0.089,"dz":0.079,"largo":0.237,"vol":0.0009,"area":0.0513,"cara":0.0513,"vert":0.0513},"us":{"material":"Maniquí blanco"},"id":"86d413f0-53f3-4575-8b20-ab685708977b"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.167,"dy":0.168,"dz":0.805,"largo":0.805,"vol":0.0083,"area":0.3107,"cara":0.2849,"vert":0.2849,"sup":0.0221},"us":{"material":"Maniquí blanco"},"id":"3a976d59-8ed1-421d-987e-a0a5b7de1636"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.059,"dy":0.039,"dz":0.158,"largo":0.158,"vol":0.0002,"area":0.0201,"cara":0.0201,"vert":0.0201},"us":{"material":"Maniquí blanco"},"id":"6203d64d-bfa7-43e4-8293-9a39f6a30ab4"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.114,"dy":0.11,"dz":0.521,"largo":0.521,"vol":0.0025,"area":0.1347,"cara":0.1253,"vert":0.1253,"sup":0.007},"us":{"material":"Maniquí blanco"},"id":"c7348b6d-5345-4270-b8a3-52f52f239332"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.237,"dy":0.089,"dz":0.079,"largo":0.237,"vol":0.0009,"area":0.0513,"cara":0.0513,"vert":0.0513},"us":{"material":"Maniquí blanco"},"id":"483f5021-cac1-4ef8-a42a-f166969c2a33"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.167,"dy":0.168,"dz":0.805,"largo":0.805,"vol":0.0083,"area":0.3107,"cara":0.2849,"vert":0.2849,"sup":0.0221},"us":{"material":"Maniquí blanco"},"id":"be5086f4-7955-4a1d-9563-b83b2cd372eb"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.187,"dy":0.158,"dz":0.227,"largo":0.227,"vol":0.0035,"area":0.1136,"cara":0.1136,"vert":0.1136},"us":{"material":"Maniquí blanco"},"id":"7f73f8b1-3691-4ca9-8856-4b9db0baf7e9"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.113,"dy":0.108,"dz":0.101,"largo":0.113,"vol":0.0007,"area":0.0453,"cara":0.0285,"vert":0.0285,"sup":0.0076},"us":{"material":"Maniquí blanco"},"id":"30d687d1-0abb-42bb-811d-1d430b60facf"},{"n":"Persona de pie A (1,75)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.243,"dy":0.371,"dz":0.641,"largo":0.641,"vol":0.0329,"area":0.6116,"cara":0.5518,"vert":0.5518,"sup":0.0101},"us":{"material":"Maniquí blanco"},"id":"193808b2-2710-4713-96f2-484250944d60"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.037,"dy":0.056,"dz":0.149,"largo":0.149,"vol":0.0002,"area":0.0178,"cara":0.0178,"vert":0.0178},"us":{"material":"Maniquí blanco"},"id":"51ef92af-384d-4613-bfd6-3e1c0fdb6d23"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.104,"dy":0.108,"dz":0.491,"largo":0.491,"vol":0.0021,"area":0.1198,"cara":0.1114,"vert":0.1114,"sup":0.0063},"us":{"material":"Maniquí blanco"},"id":"83e6a269-dd73-471a-8b50-6a14f254a816"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.084,"dy":0.223,"dz":0.074,"largo":0.223,"vol":0.0007,"area":0.0456,"cara":0.0456,"vert":0.0456},"us":{"material":"Maniquí blanco"},"id":"31572935-a8c4-43a2-abf2-11b52994fec2"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.158,"dy":0.158,"dz":0.759,"largo":0.759,"vol":0.007,"area":0.2762,"cara":0.2533,"vert":0.2533,"sup":0.0196},"us":{"material":"Maniquí blanco"},"id":"839c271a-a2bc-4e6e-9bf6-622b3730cc60"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.037,"dy":0.056,"dz":0.149,"largo":0.149,"vol":0.0002,"area":0.0178,"cara":0.0178,"vert":0.0178},"us":{"material":"Maniquí blanco"},"id":"9e8ba8d1-66ef-4e3f-a812-7675432d3609"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.104,"dy":0.108,"dz":0.491,"largo":0.491,"vol":0.0021,"area":0.1198,"cara":0.1114,"vert":0.1114,"sup":0.0063},"us":{"material":"Maniquí blanco"},"id":"a619d357-be60-4599-be56-99f9cdd0cd45"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.084,"dy":0.223,"dz":0.074,"largo":0.223,"vol":0.0007,"area":0.0456,"cara":0.0456,"vert":0.0456},"us":{"material":"Maniquí blanco"},"id":"ba4c5b43-c0c4-4948-8a6b-e9771124ed9c"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.158,"dy":0.158,"dz":0.759,"largo":0.759,"vol":0.007,"area":0.2762,"cara":0.2533,"vert":0.2533,"sup":0.0196},"us":{"material":"Maniquí blanco"},"id":"437a142f-2f43-41dc-87ee-80a404bae783"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.149,"dy":0.177,"dz":0.214,"largo":0.214,"vol":0.0029,"area":0.101,"cara":0.101,"vert":0.101},"us":{"material":"Maniquí blanco"},"id":"31b30808-8e19-4e44-a6e8-83a93b5542a4"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.102,"dy":0.106,"dz":0.096,"largo":0.106,"vol":0.0006,"area":0.0403,"cara":0.0253,"vert":0.0253,"sup":0.0068},"us":{"material":"Maniquí blanco"},"id":"6ef82883-d8ac-439f-b01b-8ebcd9c6a9ce"},{"n":"Persona de pie B (1,65)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.35,"dy":0.229,"dz":0.604,"largo":0.604,"vol":0.0276,"area":0.5437,"cara":0.4905,"vert":0.4905,"sup":0.009},"us":{"material":"Maniquí blanco"},"id":"17eda38e-1b9f-4876-a8c3-6582ddc04443"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.08,"dy":0.16,"dz":0.04,"largo":0.16,"vol":0.0003,"area":0.0254,"cara":0.0254,"vert":0.0254},"us":{"material":"Maniquí blanco"},"id":"137628c9-6863-4d7b-84ad-d3e9cc380006"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.159,"dy":0.459,"dz":0.358,"largo":0.459,"vol":0.0029,"area":0.1536,"cara":0.1439,"vert":0.0025,"sup":0.0072},"us":{"material":"Maniquí blanco"},"id":"713010bd-e510-4eaf-be1b-e972b15fa524"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.09,"dy":0.24,"dz":0.08,"largo":0.24,"vol":0.0009,"area":0.0528,"cara":0.0528,"vert":0.0528},"us":{"material":"Maniquí blanco"},"id":"fbf2ed84-2880-411d-bef4-bb218864685a"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.17,"dy":0.515,"dz":0.547,"largo":0.547,"vol":0.01,"area":0.3605,"cara":0.3339,"vert":0.0227},"us":{"material":"Maniquí blanco"},"id":"9a8c1877-134b-4b35-b09e-ccbf48bdc0ab"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.08,"dy":0.16,"dz":0.04,"largo":0.16,"vol":0.0003,"area":0.0254,"cara":0.0254,"vert":0.0254},"us":{"material":"Maniquí blanco"},"id":"6c9640a9-67aa-4742-bf8a-9f1dc9515fbd"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.159,"dy":0.459,"dz":0.358,"largo":0.459,"vol":0.0029,"area":0.1536,"cara":0.1439,"vert":0.0025,"sup":0.0072},"us":{"material":"Maniquí blanco"},"id":"10c47d9d-86d4-45a5-b506-bb9d0fb958a3"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.09,"dy":0.24,"dz":0.08,"largo":0.24,"vol":0.0009,"area":0.0528,"cara":0.0528,"vert":0.0528},"us":{"material":"Maniquí blanco"},"id":"b89d9db1-0cbe-4c39-9047-b5004b35dcc2"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.17,"dy":0.515,"dz":0.547,"largo":0.547,"vol":0.01,"area":0.3605,"cara":0.3339,"vert":0.0227},"us":{"material":"Maniquí blanco"},"id":"4210a0aa-0d28-475e-bc22-0237e36dd219"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.16,"dy":0.19,"dz":0.23,"largo":0.23,"vol":0.0037,"area":0.1169,"cara":0.1169,"vert":0.1169},"us":{"material":"Maniquí blanco"},"id":"b72e1763-fdcb-42a6-88f5-d94104cb37ff"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.11,"dy":0.114,"dz":0.103,"largo":0.114,"vol":0.0007,"area":0.0466,"cara":0.0293,"vert":0.0293,"sup":0.0079},"us":{"material":"Maniquí blanco"},"id":"3d7213ab-524d-4e22-be9c-0eb42ea67713"},{"n":"Persona sentada (banco)","l":"Personas","pl":"Cocina","c":[230,228,224],"m":{"dx":0.376,"dy":0.246,"dz":0.65,"largo":0.65,"vol":0.0344,"area":0.6292,"cara":0.5677,"vert":0.5677,"sup":0.0104},"us":{"material":"Maniquí blanco"},"id":"f825d0f3-8435-410c-b1cb-cf7d0f254c2b"},{"n":"Vitrocerámica 76x52","l":"Electrodomésticos","pl":"Cocina","c":[20,20,22],"m":{"dx":0.76,"dy":0.52,"dz":0.006,"largo":0.76,"vol":0.0024,"area":0.8058,"cara":0.3952,"vert":0.0154,"sup":0.3952},"us":{"material":"Vitro negra"},"id":"62358d87-4354-4114-8a45-186d9cca8d82"},{"n":"Fregadero - grifo","l":"Electrodomésticos","pl":"Cocina","c":[170,172,175],"m":{"dx":0.016,"dy":0.116,"dz":0.036,"largo":0.116,"area":0.0059,"cara":0.0051},"us":{"material":"Acero inoxidable"},"id":"57a35a49-fe0d-43c8-8732-e2ef9ab4f0df"},{"n":"Fregadero - grifo","l":"Electrodomésticos","pl":"Cocina","c":[170,172,175],"m":{"dx":0.242,"dy":0.022,"dz":0.022,"largo":0.242,"vol":0.0001,"area":0.0167,"cara":0.0152,"vert":0.0167},"us":{"material":"Acero inoxidable"},"id":"6a2f680a-1a36-4681-a135-d5620d93bd28"},{"n":"Fregadero - grifo","l":"Electrodomésticos","pl":"Cocina","c":[170,172,175],"m":{"dx":0.036,"dy":0.036,"dz":0.296,"largo":0.296,"vol":0.0003,"area":0.0335,"cara":0.0294,"vert":0.0294},"us":{"material":"Acero inoxidable"},"id":"3cec8a6a-a6a6-4cc4-9da8-8a7350eba41f"},{"n":"Fregadero - cubeta 40x55","l":"Electrodomésticos","pl":"Cocina","c":[170,172,175],"m":{"dx":0.42,"dy":0.57,"dz":0.16,"largo":0.57,"vol":0.0053,"area":1.0806,"cara":0.2394,"vert":0.6018,"sup":0.0194},"us":{"material":"Acero inoxidable"},"id":"28eb4617-539f-47e8-b002-631fc1748171"},{"n":"Línea LED encimera fuegos - perfil","l":"Iluminación","pl":"Cocina","c":[236,234,229],"m":{"dx":1.38,"dy":0.02,"dz":0.015,"largo":1.38},"us":{"material":"Laca blanca mate"},"id":"56ee28f2-457b-4afd-b65d-c375d08ddbe2"},{"n":"Línea LED encimera fuegos - difusor","l":"Iluminación","pl":"Cocina","c":[255,255,255],"m":{"dx":1.38,"dy":0.014,"dz":0.003,"largo":1.38},"us":{"material":"LED lineal (emisivo)"},"id":"34694f83-b0ed-4701-9dc2-1d53e2aab79c"},{"n":"Línea LED estor - difusor","l":"Iluminación","pl":"Cocina","c":[255,255,255],"m":{"dx":0.024,"dy":2.301,"dz":0.004,"largo":2.301},"us":{"material":"LED lineal (emisivo)"},"id":"4495f0e2-5c22-4145-8aa2-7ddb83421117"},{"n":"Línea LED estor - perfil","l":"Iluminación","pl":"Cocina","c":[236,234,229],"m":{"dx":0.03,"dy":2.301,"dz":0.026,"largo":2.301},"us":{"material":"Laca blanca mate"},"id":"dbc6c0e1-f538-418a-8fb7-d816d377249f"},{"n":"Lámpara colgante mesa 2 (PH 4/3)","l":"Iluminación","pl":"Cocina","c":[236,234,229],"m":{"dx":0.11,"dy":0.11,"dz":0.02,"largo":0.11},"us":{"material":"Laca blanca mate"},"id":"ecfee13f-ef1e-43a5-9e7e-734a692ab071"},{"n":"Lámpara colgante mesa 2 (PH 4/3)","l":"Iluminación","pl":"Cocina","c":[236,234,229],"m":{"dx":0.005,"dy":0.005,"dz":0.418,"largo":0.418},"us":{"material":"Laca blanca mate"},"id":"1b5bfb3a-52f1-4fe6-873e-0cf02e063bcd"},{"n":"Lámpara colgante mesa 2 (PH 4/3)","l":"Iluminación","pl":"Cocina","c":[236,234,229],"m":{"dx":0.398,"dy":0.398,"dz":0.412,"largo":0.412},"us":{"material":"Laca blanca mate","bloque":"PH 4-3 Louis Poulsen"},"id":"9a73ad70-7f46-424c-a9a6-5cba3bfd9a0c"},{"n":"Lámpara colgante mesa 1 (PH 4/3)","l":"Iluminación","pl":"Cocina","c":[236,234,229],"m":{"dx":0.11,"dy":0.11,"dz":0.02,"largo":0.11},"us":{"material":"Laca blanca mate"},"id":"bf928856-ec58-457a-a91f-71adde58545a"},{"n":"Lámpara colgante mesa 1 (PH 4/3)","l":"Iluminación","pl":"Cocina","c":[236,234,229],"m":{"dx":0.005,"dy":0.005,"dz":0.418,"largo":0.418},"us":{"material":"Laca blanca mate"},"id":"4f168ac2-114a-4976-b0db-e6d7cca8e98a"},{"n":"Lámpara colgante mesa 1 (PH 4/3)","l":"Iluminación","pl":"Cocina","c":[236,234,229],"m":{"dx":0.398,"dy":0.398,"dz":0.412,"largo":0.412},"us":{"material":"Laca blanca mate","bloque":"PH 4-3 Louis Poulsen"},"id":"a3751d78-ec18-4c5a-8b33-fdb832dfe84c"},{"n":"Estor patio - rodillo","l":"Textiles","pl":"Cocina","c":[250,250,248],"m":{"dx":0.04,"dy":2.311,"dz":0.04,"largo":2.311,"vol":0.0029,"area":0.2929,"cara":0.2904,"vert":0.0025},"us":{},"id":"f7484d16-7f49-4d22-97e2-c6bfb9b3abe5"},{"n":"Estor patio - tejido","l":"Textiles","pl":"Cocina","c":[245,245,242],"m":{"dx":0.002,"dy":2.301,"dz":1.39,"largo":2.301,"vol":0.0064,"area":6.4115,"cara":3.1984,"vert":6.4023,"sup":0.0046},"us":{"material":"Estor blanco mate traslucido"},"id":"239574b2-2709-4ccf-a61c-2af89de3419d"},{"n":"Estor patio - barra inferior","l":"Textiles","pl":"Cocina","c":[250,250,248],"m":{"dx":0.009,"dy":2.301,"dz":0.02,"largo":2.301,"vol":0.0004,"area":0.1338,"cara":0.046,"vert":0.0924,"sup":0.0207},"us":{},"id":"e43a5304-4dea-4bb4-8155-337bb527393c"},{"n":"Aseo - mampara - perfil techo","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.012,"dy":0.479,"dz":0.015,"largo":0.479,"vol":0.0001,"area":0.0262,"cara":0.0072,"vert":0.0147,"sup":0.0057},"us":{"material":"Acero inoxidable"},"id":"6824764d-6d12-4e05-bfdd-a35846b8d0e1"},{"n":"Aseo - mampara - perfil pared","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.024,"dy":0.02,"dz":2.4,"largo":2.4,"vol":0.0012,"area":0.2122,"cara":0.0576,"vert":0.2112,"sup":0.0005},"us":{"material":"Acero inoxidable"},"id":"535934e2-3990-4e53-a8b8-06a343f9b777"},{"n":"Aseo - ducha - rociador","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.25,"dy":0.25,"dz":0.015,"largo":0.25,"vol":0.0007,"area":0.11,"cara":0.0491,"vert":0.0118,"sup":0.0491},"us":{"material":"Acero inoxidable"},"id":"4d7fa62f-5748-44b9-b056-9660c3ee7b04"},{"n":"Aseo - ducha - brazo rociador","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.024,"dy":0.4,"dz":0.024,"largo":0.4,"vol":0.0002,"area":0.0311,"cara":0.0302,"vert":0.0009,"sup":0.0302},"us":{"material":"Acero inoxidable"},"id":"72de4871-90bb-4fdd-ae9c-1c964e1996d5"},{"n":"Aseo - ducha - termostático","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.2,"dy":0.045,"dz":0.08,"largo":0.2,"vol":0.0007,"area":0.0572,"cara":0.016,"vert":0.0392,"sup":0.009},"us":{"material":"Acero inoxidable"},"id":"1e62126c-3f3e-4b9e-a31a-1a4756a1a7b5"},{"n":"Aseo - ducha - sumidero lineal","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.06,"dy":0.7,"dz":0.002,"largo":0.7,"vol":0.0001,"area":0.087,"cara":0.042,"vert":0.003,"sup":0.042},"us":{"material":"Acero inoxidable"},"id":"c781b8b4-05cb-47b4-9848-d0285bf76991"},{"n":"Aseo - inodoro - pulsador","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.15,"dy":0.01,"dz":0.15,"largo":0.15,"vol":0.0002,"area":0.051,"cara":0.0225,"vert":0.048,"sup":0.0015},"us":{"material":"Acero inoxidable"},"id":"9fb36532-6aa8-4ff2-a431-979b7087bc52"},{"n":"Aseo - inodoro - asiento","l":"Sanitarios","pl":"Aseo","c":[248,248,246],"m":{"dx":0.35,"dy":0.46,"dz":0.025,"largo":0.46,"vol":0.0039,"area":0.3476,"cara":0.1548,"vert":0.0379,"sup":0.3096},"us":{"material":"Porcelana blanca"},"id":"10ce563e-1ef5-4694-bf49-a231f2dd1785"},{"n":"Aseo - inodoro - taza","l":"Sanitarios","pl":"Aseo","c":[248,248,246],"m":{"dx":0.35,"dy":0.46,"dz":0.12,"largo":0.46,"vol":0.0186,"area":0.4917,"cara":0.1548,"vert":0.182,"sup":0.3096},"us":{"material":"Porcelana blanca"},"id":"f36d089c-fbf6-478a-a21a-3c56b680850f"},{"n":"Aseo - lavabo - grifo caño","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.126,"dy":0.099,"dz":0.028,"largo":0.126,"vol":0.0001,"area":0.013,"cara":0.0118,"vert":0.013},"us":{"material":"Acero inoxidable"},"id":"dde2641b-7ee1-43b6-a08f-6ec8837877ff"},{"n":"Aseo - lavabo - grifo cuerpo","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.044,"dy":0.044,"dz":0.18,"largo":0.18,"vol":0.0003,"area":0.0279,"cara":0.0249,"vert":0.0249,"sup":0.0015},"us":{"material":"Acero inoxidable"},"id":"570d7503-7af5-422d-97c6-fcd3fb87942c"},{"n":"Aseo - lavabo - desagüe","l":"Sanitarios","pl":"Aseo","c":[170,172,175],"m":{"dx":0.04,"dy":0.04,"dz":0.003,"largo":0.04,"area":0.0029,"cara":0.0013,"vert":0.0004,"sup":0.0013},"us":{"material":"Acero inoxidable"},"id":"5910d5a1-eba4-4919-8308-08242daec522"},{"n":"Aseo - lavabo integrado","l":"Sanitarios","pl":"Aseo","c":[244,243,240],"m":{"dx":1.198,"dy":0.5,"dz":0.03,"largo":1.198,"vol":0.0149,"area":1.1302,"cara":0.4972,"vert":0.1358,"sup":0.4972},"us":{"material":"Solid surface blanco"},"id":"7181c703-b83f-4fbf-a058-129197b29c29"},{"n":"Aseo - alicatado sur","l":"Revestimientos","pl":"Aseo","c":[236,236,232],"m":{"dx":4.419,"dz":2.4,"largo":4.419,"area":10.6056,"cara":10.6056,"vert":10.6056},"us":{"material":"Azulejo 10x10 blanco mate junta clara"},"id":"176930e2-b51f-4586-b4d0-ae291f5ed290"},{"n":"Aseo - alicatado este ventana","l":"Revestimientos","pl":"Aseo","c":[236,236,232],"m":{"dy":0.8,"dz":2.4,"largo":2.4,"area":1.6275,"cara":1.6275,"vert":1.6275},"us":{"material":"Azulejo 10x10 blanco mate junta clara"},"id":"e810ac68-b12e-47fe-8d5d-4a4cc41285e2"},{"n":"Aseo - alicatado norte ducha","l":"Revestimientos","pl":"Aseo","c":[236,236,232],"m":{"dx":1.502,"dz":2.4,"largo":2.4,"area":3.6048,"cara":3.6048,"vert":3.6048},"us":{"material":"Azulejo 10x10 blanco mate junta clara"},"id":"cb0e2889-045d-4a37-92d7-cb28c97ea8f8"},{"n":"Aseo - alicatado retranqueo","l":"Revestimientos","pl":"Aseo","c":[236,236,232],"m":{"dy":0.5,"dz":2.4,"largo":2.4,"area":1.2,"cara":1.2,"vert":1.2},"us":{"material":"Azulejo 10x10 blanco mate junta clara"},"id":"f1b8ac22-fc3d-4d73-8263-f204da6581d0"},{"n":"Aseo - alicatado norte lavabo-inodoro","l":"Revestimientos","pl":"Aseo","c":[236,236,232],"m":{"dx":1.998,"dz":2.4,"largo":2.4,"area":4.7952,"cara":4.7952,"vert":4.7952},"us":{"material":"Azulejo 10x10 blanco mate junta clara"},"id":"f9b4c395-46d9-4521-9122-1e049d26ee69"}],"curves":[],"layers":{"Muros":true,"Estructura":true,"Suelo +0,00":true,"Techo +2,40":false,"Carpintería":true,"Vidrio":true,"Mobiliario":true,"Personas":true,"Electrodomésticos":true,"Iluminación":true,"Textiles":true,"Sanitarios":true,"Revestimientos":true},"plantas":["Cocina","Despensa","Aseo"]}</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "three-mesh-bvh":"https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.8.3/build/index.module.js"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { computeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
+
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (n, d = 2) => (+n || 0).toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+const META = JSON.parse(document.getElementById('meta').textContent);
+const OBJS = META.objs, CURVES = META.curves, PLANTAS = META.plantas;
+const PIDX = p => { const i = PLANTAS.indexOf(p); return i < 0 ? null : i; };
+const plantaAtY = y => 0;
+const U3 = new THREE.Vector3(1, 0, 0), V3 = new THREE.Vector3(0, 0, -1), O3 = new THREE.Vector3(0, 0, 0);
+const pretty = n => n.replace(' - ', ' · ');
+const shortL = l => l.split('::').pop();
+
+/* ---------------- disposición ---------------- */
+const mqMob = matchMedia('(max-width: 820px)');
+function layout() {
+  const acc = $('#acciones');
+  if (mqMob.matches) { acc.classList.add('en-panel'); $('#panel').prepend(acc); }
+  else { acc.classList.remove('en-panel'); document.querySelector('header').appendChild(acc); }
+  resize();
+}
+mqMob.addEventListener('change', layout);
+$('#bPanel').onclick = () => { const p = $('#panel'); p.classList.toggle('cerrado'); $('#bPanel').setAttribute('aria-pressed', String(!p.classList.contains('cerrado'))); };
+
+/* ---------------- escena ---------------- */
+const app = $('#app');
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.localClippingEnabled = true; renderer.toneMapping = THREE.NeutralToneMapping;
+app.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const persp = new THREE.PerspectiveCamera(50, 1, 0.05, 2000);
+const ortho = new THREE.OrthographicCamera(-10, 10, 10, -10, -500, 2000);
+let camera = persp, orthoH = 12;
+const controls = new OrbitControls(persp, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.09; controls.maxPolarAngle = Math.PI * 0.495;
+controls.minDistance = 0.3; controls.maxDistance = 60;
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+const hemi = new THREE.HemisphereLight(0xf3f1ea, 0x6f6a60, 1.55); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff4e2, 2.2);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
+scene.add(sun, sun.target);
+let W = 1, H = 1;
+function resize() {
+  W = app.clientWidth || innerWidth; H = app.clientHeight || innerHeight;
+  renderer.setSize(W, H, false);
+  persp.aspect = W / H; persp.updateProjectionMatrix(); updOrtho();
+}
+function updOrtho() { const a = W / H; ortho.left = -orthoH * a; ortho.right = orthoH * a; ortho.top = orthoH; ortho.bottom = -orthoH; ortho.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(app);
+
+let style = 'material';
+function applyTheme() {
+  const sky = new THREE.Color(css('--paper') || '#ffffff');
+  scene.background = sky; scene.fog = null;
+  const dark = sky.getHSL({}).l < 0.5;
+  if (typeof EDGE !== 'undefined') EDGE.house.color.set(style === 'linea' ? (dark ? 0xf4f4f4 : 0x000000) : style === 'masa' ? 0x55524d : 0x3b3631);
+}
+function themeChanged() { PAPER.set(css('--paper') || '#ffffff'); applyTheme(); }
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeChanged);
+new MutationObserver(themeChanged).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+/* planos de corte: altura, longitudinal, transversal */
+const pH = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e4), pL = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e4), pT = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e4);
+const CLIP = [pH, pL, pT];
+const sec = { h: { on: false, v: 1.5 }, l: { on: false, v: 0 }, t: { on: false, v: 5 }, flip: false };
+function applyClip() {
+  const f = sec.flip ? -1 : 1;
+  if (sec.h.on) pH.set(new THREE.Vector3(0, -f, 0), f * sec.h.v); else pH.set(new THREE.Vector3(0, -1, 0), 1e4);
+  if (sec.l.on) pL.setFromNormalAndCoplanarPoint(V3.clone().multiplyScalar(-f), O3.clone().addScaledVector(V3, sec.l.v)); else pL.set(new THREE.Vector3(0, -1, 0), 1e4);
+  if (sec.t.on) pT.setFromNormalAndCoplanarPoint(U3.clone().multiplyScalar(-f), O3.clone().addScaledVector(U3, sec.t.v)); else pT.set(new THREE.Vector3(0, -1, 0), 1e4);
+}
+const clipped = p => CLIP.some(pl => pl.distanceToPoint(p) < -1e-3);
+
+/* ---------------- modelo ---------------- */
+const nodes = [];        // {obj, layer, planta, pIdx, env, inst, meshes}
+const layerVis = { ...META.layers };
+const plantaVis = Object.fromEntries(PLANTAS.map(p => [p, true]));
+let envAuto = false;     // ocultar vecinos en vistas de planta
+let sep = 0;             // explotar
+const houseBox = new THREE.Box3();
+const EDGE = {
+  house: new THREE.LineBasicMaterial({ color: 0x3b3631, transparent: true, opacity: .55, clippingPlanes: CLIP }),
+  env: new THREE.LineBasicMaterial({ color: 0x8f8b84, transparent: true, opacity: .35 }),
+};
+function addPoche(mat) {
+  mat.onBeforeCompile = sh => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n if(!gl_FrontFacing){ gl_FragColor = vec4(0.13,0.12,0.11,1.0); return; }');
+  };
+}
+const PAPER = new THREE.Color(css('--paper') || '#ffffff');
+function makeMats(color, glass, env, inst) {
+  const clip = env ? [] : CLIP;
+  const base = { side: THREE.DoubleSide, clippingPlanes: clip, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, transparent: glass, depthWrite: !glass };
+  const material = new THREE.MeshStandardMaterial({ ...base, color, roughness: glass ? .1 : .9, metalness: 0, opacity: glass ? .3 : 1, flatShading: true });
+  const masa = inst ? material : new THREE.MeshStandardMaterial({ ...base, color: env ? 0xd8d5ce : 0xefede8, roughness: .95, opacity: glass ? .25 : 1, flatShading: true });
+  const linea = inst ? new THREE.MeshBasicMaterial({ ...base, color }) : new THREE.MeshBasicMaterial({ ...base, color: PAPER, opacity: glass ? .12 : 1 });
+  if (!env && !glass) [material, masa, linea].forEach(addPoche);
+  return { material, masa, linea };
+}
+
+const GLB = await fetch('modelo.glb').then(r => { if (!r.ok) throw new Error('modelo.glb ' + r.status); return r.arrayBuffer(); });
+new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parse(GLB, '', gltf => {
+  const root = gltf.scene;
+  root.children.slice().forEach(nd => {
+    const layer = nd.userData.layer, planta = nd.userData.planta;
+    const env = layer.startsWith('Entorno'), inst = layer.startsWith('Instalaciones');
+    const N = { obj: nd, layer, planta, pIdx: PIDX(planta), env, inst, meshes: [], y0: nd.position.y };
+    nd.traverse(m => {
+      if (!m.isMesh) return;
+      const glass = m.material.transparent || /Vidrio/i.test(layer);
+      m.userData.mats = makeMats(m.material.color.clone(), glass, env, inst);
+      m.userData.node = N; m.userData.glass = glass;
+      m.material = m.userData.mats.material;
+      m.castShadow = !glass && layer !== 'Techo +2,40'; m.receiveShadow = true;
+      m.geometry.computeBoundsTree();
+      if (!glass && layer !== 'Personas') {
+        const ls = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 28), env ? EDGE.env : EDGE.house);
+        ls.raycast = () => {}; m.add(ls); m.userData.edges = ls;
+      }
+      N.meshes.push(m);
+    });
+    nodes.push(N);
+  });
+  scene.add(root); root.updateMatrixWorld(true);
+  houseBox.copy(ZONES.ext);
+  const c = houseBox.getCenter(new THREE.Vector3()), s = houseBox.getSize(new THREE.Vector3());
+  sun.position.copy(c).add(new THREE.Vector3(14, 22, 9)); sun.target.position.copy(c);
+  const r = Math.max(s.x, s.z) * 1.0 + 4;
+  Object.assign(sun.shadow.camera, { left: -r, right: r, top: r, bottom: -r, near: 1, far: 80 }); sun.shadow.camera.updateProjectionMatrix();
+  buildLayers(); buildPlantas(); refresh(); setStyle('material'); quick('ext', true); updVisMed();
+  $('#load').remove();
+}, err => { $('#lt').textContent = 'No se pudo cargar el modelo'; console.error(err); });
+
+function nodeVisible(N) {
+  if (!layerVis[N.layer]) return false;
+  if (envAuto && N.layer === 'Techo +2,40') return false;
+  if (N.pIdx != null && !plantaVis[N.planta]) return false;
+  return true;
+}
+function refresh() {
+  nodes.forEach(N => { N.obj.visible = nodeVisible(N); N.obj.position.y = N.y0 + (N.pIdx != null ? N.pIdx * sep : 0); });
+  buildTubes(); refreshHL();
+}
+function isVisible(o) { while (o) { if (!o.visible) return false; o = o.parent; } return true; }
+
+/* ---------------- estilos ---------------- */
+function setStyle(s) {
+  style = s;
+  $$('#style button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === s)));
+  nodes.forEach(N => N.meshes.forEach(m => m.material = m.userData.mats[s]));
+  const line = s === 'linea';
+  EDGE.house.opacity = line ? 1 : s === 'masa' ? .5 : .55;
+  EDGE.env.color.set(line ? 0x8a8a8a : 0x8f8b84); EDGE.env.opacity = line ? .7 : .35;
+  renderer.shadowMap.enabled = !line; sun.visible = !line; hemi.intensity = line ? 3 : 1.55; renderer.toneMapping = line ? THREE.NoToneMapping : THREE.NeutralToneMapping;
+  applyTheme();
+  scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+}
+$$('#style button').forEach(b => b.onclick = () => setStyle(b.dataset.s));
+
+/* ---------------- cámaras y vistas ---------------- */
+let anim = null;
+function useCamera(cam) {
+  if (camera === cam) return;
+  const t = controls.target.clone();
+  if (cam === ortho) {
+    const dist = persp.position.distanceTo(t);
+    orthoH = Math.tan(THREE.MathUtils.degToRad(persp.fov / 2)) * dist; ortho.zoom = 1; updOrtho();
+    ortho.position.copy(persp.position); ortho.up.copy(persp.up); ortho.lookAt(t);
+  } else {
+    persp.position.copy(ortho.position); persp.up.set(0, 1, 0);
+    const dist = orthoH / ortho.zoom / Math.tan(THREE.MathUtils.degToRad(persp.fov / 2));
+    persp.position.copy(t).add(ortho.position.clone().sub(t).setLength(dist));
+  }
+  camera = cam; controls.object = cam; controls.target.copy(t);
+  controls.maxPolarAngle = cam === ortho ? Math.PI : Math.PI * 0.495;
+  $('#bPersp').setAttribute('aria-pressed', String(cam === persp));
+  controls.update(); applyTheme(); updExportNote();
+}
+function visibleHouseBox() {
+  const b = new THREE.Box3();
+  nodes.forEach(N => { if (!N.env && N.obj.visible) b.expandByObject(N.obj); });
+  if (b.isEmpty()) b.copy(houseBox);
+  // limitar a los planos de corte de altura
+  if (sec.h.on && !sec.flip) b.max.y = Math.min(b.max.y, sec.h.v + (sep ? 5 * sep : 0));
+  return b;
+}
+function fitTo(dir, up = new THREE.Vector3(0, 1, 0), box = visibleHouseBox(), instant = false) {
+  const c = box.getCenter(new THREE.Vector3());
+  dir = dir.clone().normalize();
+  if (camera === ortho) {
+    const right = new THREE.Vector3().crossVectors(up, dir).normalize(), upv = new THREE.Vector3().crossVectors(dir, right);
+    let mx = 0, my = 0;
+    for (let i = 0; i < 8; i++) {
+      const p = new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).sub(c);
+      mx = Math.max(mx, Math.abs(p.dot(right))); my = Math.max(my, Math.abs(p.dot(upv)));
+    }
+    const target = c, pos = c.clone().addScaledVector(dir, 120);
+    const nh = Math.max(my, mx / (W / H)) * 1.12;
+    ortho.up.copy(up);
+    flyTo(pos, target, instant ? 0 : 700, () => { orthoH = nh; ortho.zoom = 1; updOrtho(); });
+  } else {
+    const r = box.getBoundingSphere(new THREE.Sphere()).radius;
+    const dist = r / Math.sin(THREE.MathUtils.degToRad(persp.fov / 2)) * (W / H < 1 ? 1.05 / Math.max(W / H, .55) : .95);
+    persp.up.set(0, 1, 0);
+    flyTo(c.clone().addScaledVector(dir, dist), c, instant ? 0 : 800);
+  }
+}
+function flyTo(pos, target, ms = 900, onStart) {
+  onStart?.();
+  if (!ms || matchMedia('(prefers-reduced-motion: reduce)').matches) { camera.position.copy(pos); controls.target.copy(target); camera.lookAt(target); anim = null; controls.update(); return; }
+  const p0 = camera.position.clone(), t0 = controls.target.clone(), st = performance.now();
+  anim = now => {
+    let k = Math.min(1, (now - st) / ms); k = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    camera.position.lerpVectors(p0, pos, k); controls.target.lerpVectors(t0, target, k);
+    if (k >= 1) anim = null;
+  };
+}
+const PRESETS = {
+  axSE: [new THREE.Vector3(1, 0.95, 1)], axSO: [new THREE.Vector3(-1, 0.95, 1)], axNE: [new THREE.Vector3(1, 0.95, -1)], axNO: [new THREE.Vector3(-1, 0.95, -1)],
+  planta: [new THREE.Vector3(0, 1, 0), V3.clone()],
+  alzN: [new THREE.Vector3(0, 0, -1)], alzS: [new THREE.Vector3(0, 0, 1)], alzE: [new THREE.Vector3(1, 0, 0)], alzO: [new THREE.Vector3(-1, 0, 0)],
+};
+const PNAME = { axSE: 'Axonometría SE', axSO: 'Axonometría SO', axNE: 'Axonometría NE', axNO: 'Axonometría NO', planta: 'Planta', alzN: 'Alzado norte', alzS: 'Alzado sur', alzE: 'Alzado este (fachada)', alzO: 'Alzado oeste' };
+let preset = '';
+function setPreset(k, keepPersp) {
+  preset = k; $('#vsel').value = k;
+  if (!k) return;
+  stopWalk();
+  if (!keepPersp) useCamera(ortho);
+  envAuto = !k.startsWith('ax'); refresh();
+  const [dir, up] = PRESETS[k];
+  fitTo(dir, up || new THREE.Vector3(0, 1, 0));
+  $$('#qv button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  setSub(PNAME[k] + (camera === ortho ? '' : ' · perspectiva'));
+}
+$('#vsel').onchange = e => setPreset(e.target.value);
+$('#bPersp').onclick = () => { useCamera(camera === persp ? ortho : persp); if (preset) setPreset(preset, camera === persp); };
+$('#bFit').onclick = () => {
+  const dir = camera.position.clone().sub(controls.target);
+  fitTo(dir, camera === ortho ? ortho.up.clone() : undefined);
+};
+function setSub(t) { $('#sub').textContent = t; }
+
+/* vistas rápidas */
+// cajas en coordenadas del visor (m): x = (X-850)/100, y = Z/100, z = -(Y-355)/100 (X, Y, Z de Rhino en cm)
+const RB = (x0, x1, y0, y1) => new THREE.Box3(new THREE.Vector3((x0 - 850) / 100, 0, -(y1 - 355) / 100), new THREE.Vector3((x1 - 850) / 100, 2.4, -(y0 - 355) / 100));
+const ZONES = { ext: RB(1095, 1700, 0, 575), coc: RB(1100, 1700, 0, 342), aseo: RB(1105, 1606, 428, 566) };
+const QDIR = { ext: new THREE.Vector3(0.55, 1.15, 1), coc: new THREE.Vector3(-0.35, 1.25, 0.85), aseo: new THREE.Vector3(0.15, 2.2, -0.75) };
+const CUTS = { coc: 2.25, aseo: 2.25 }, FLOORS = { ext: 0, coc: 0, aseo: 0 };
+const SUB = { ext: 'Conjunto · sin techo', coc: 'Cocina · corte a +2,25', aseo: 'Aseo · corte a +2,25', walk: 'Recorrido · ojo a 1,60 m' };
+let lastFloor = 'coc', qv = 'ext';
+function quick(v, instant) {
+  qv = v; preset = ''; $('#vsel').value = '';
+  $$('#qv button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+  setSub(SUB[v]);
+  if (v === 'walk') return startWalk();
+  stopWalk();
+  useCamera(persp);
+  if (v === 'ext') { setSec('h', false); envAuto = true; }
+  else { lastFloor = v; setSec('h', true, CUTS[v]); envAuto = true; }
+  refresh();
+  const box = ZONES[v], c = box.getCenter(new THREE.Vector3());
+  const r = box.getBoundingSphere(new THREE.Sphere()).radius;
+  const dist = r / Math.sin(THREE.MathUtils.degToRad(persp.fov / 2)) * (W / H < 1 ? 1.15 / Math.max(W / H, .55) : 1.0);
+  flyTo(c.clone().addScaledVector(QDIR[v].clone().normalize(), dist), c, instant ? 0 : 900);
+}
+$$('#qv button').forEach(b => b.onclick = () => quick(b.dataset.v));
+$('#tWalk').onclick = () => quick(mode === 'walk' ? 'ext' : 'walk');
+
+/* ---------------- sección ---------------- */
+function setSec(k, on, v) {
+  sec[k].on = on; if (v != null) sec[k].v = v;
+  const ck = { h: '#cH', l: '#cL', t: '#cT' }[k], rg = { h: '#rH', l: '#rL', t: '#rT' }[k], o = { h: '#oH', l: '#oL', t: '#oT' }[k];
+  $(ck).checked = on; $(rg).value = sec[k].v; $(o).textContent = fmt(sec[k].v);
+  applyClip();
+}
+[['h', '#cH', '#rH'], ['l', '#cL', '#rL'], ['t', '#cT', '#rT']].forEach(([k, ck, rg]) => {
+  $(ck).onchange = e => { setSec(k, e.target.checked); if (k === 'h') { envAuto = e.target.checked; refresh(); } };
+  $(rg).oninput = e => setSec(k, true, +e.target.value);
+});
+$('#cF').onchange = e => { sec.flip = e.target.checked; applyClip(); };
+
+/* ---------------- explotar ---------------- */
+
+
+/* ---------------- capas y plantas ---------------- */
+const GROUPS = [
+  ['Construcción', ['Muros', 'Estructura', 'Suelo +0,00', 'Techo +2,40', 'Revestimientos']],
+  ['Carpinterías', ['Carpintería', 'Vidrio']],
+  ['Equipamiento', ['Mobiliario', 'Electrodomésticos', 'Sanitarios', 'Iluminación', 'Textiles']],
+  ['Escena', ['Personas']],
+];
+const layerColor = l => { const o = OBJS.find(o => o.l === l) || CURVES.find(c => c.l === l); return o ? `rgb(${o.c.join(',')})` : '#888'; };
+function ckRow(label, checked, sw, onchange) {
+  const lab = document.createElement('label'); lab.className = 'chk'; lab.title = label;
+  lab.innerHTML = `<input type="checkbox" ${checked ? 'checked' : ''}>${sw ? '<span class="sw"></span>' : ''}<span class="t"></span>`;
+  if (sw) lab.querySelector('.sw').style.background = sw;
+  lab.querySelector('.t').textContent = label;
+  lab.querySelector('input').onchange = e => onchange(e.target.checked);
+  return lab;
+}
+function buildLayers() {
+  const box = $('#layersBox'); box.innerHTML = '';
+  const seen = new Set();
+  for (const [t, names] of GROUPS) {
+    const present = names.filter(n => n in layerVis); if (!present.length) continue;
+    const h = document.createElement('div'); h.className = 'gt'; h.textContent = t; box.appendChild(h);
+    present.forEach(n => { seen.add(n); box.appendChild(ckRow(pretty(n), layerVis[n], null, v => { layerVis[n] = v; refresh(); updVisMed(); })); });
+  }
+  const rest = Object.keys(layerVis).filter(n => !seen.has(n));
+  if (rest.length) { const h = document.createElement('div'); h.className = 'gt'; h.textContent = 'Otras'; box.appendChild(h); rest.forEach(n => box.appendChild(ckRow(pretty(n), layerVis[n], null, v => { layerVis[n] = v; refresh(); updVisMed(); }))); }
+}
+function buildPlantas() {
+  const box = $('#plantasBox'); box.innerHTML = '';
+  PLANTAS.forEach(p => box.appendChild(ckRow(p, plantaVis[p], null, v => { plantaVis[p] = v; refresh(); updVisMed(); })));
+}
+
+/* ---------------- instalaciones ---------------- */
+const layerColorUnused = 0;
+const tubeGeo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true); tubeGeo.translate(0, 0.5, 0);
+const tubeMeshes = []; // {mesh, segs:[curveIdx]}
+const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
+const curveDisp = []; // por curva: puntos desplazados (para medir/exportar)
+function dispPoint(p) { const v = new THREE.Vector3(p[0], p[1], p[2]); const i = plantaAtY(v.y); return { v: v.setY(v.y + i * sep), i }; }
+function buildTubes() {
+  tubeMeshes.forEach(t => { scene.remove(t.mesh); t.mesh.dispose(); }); tubeMeshes.length = 0;
+  const byLayer = new Map();
+  CURVES.forEach((c, ci) => {
+    curveDisp[ci] = null;
+    if (!layerVis[c.l]) return;
+    const pts = c.p.map(dispPoint); curveDisp[ci] = pts.map(p => p.v);
+    const dmm = +(c.us.diametro_mm || 20);
+    const r = Math.max(dmm / 2000, c.l.includes('Suelo radiante') ? 0.007 : 0.009);
+    for (let k = 0; k < pts.length - 1; k++) {
+      const a = pts[k], b = pts[k + 1];
+      if (!plantaVis[PLANTAS[a.i]] && !plantaVis[PLANTAS[b.i]]) continue;
+      if (!byLayer.has(c.l)) byLayer.set(c.l, { color: c.c, segs: [] });
+      byLayer.get(c.l).segs.push({ a: a.v, b: b.v, r, ci });
+    }
+  });
+  for (const [l, g] of byLayer) {
+    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(`rgb(${g.color.join(',')})`), roughness: .6, clippingPlanes: CLIP });
+    const im = new THREE.InstancedMesh(tubeGeo, mat, g.segs.length);
+    g.segs.forEach((s, i) => {
+      const dir = s.b.clone().sub(s.a); const len = dir.length() || 1e-4;
+      _q.setFromUnitVectors(_up, dir.normalize());
+      im.setMatrixAt(i, _m.compose(s.a, _q, _s.set(s.r, len, s.r)));
+      im.setColorAt(i, new THREE.Color(1, 1, 1));
+    });
+    im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true;
+    im.castShadow = false; im.userData.tube = true; im.userData.layer = l;
+    scene.add(im); tubeMeshes.push({ mesh: im, segs: g.segs.map(s => s.ci), layer: l });
+  }
+}
+
+/* ---------------- selección ---------------- */
+let selObjs = new Set(), selCurves = new Set();
+const hlMat = new THREE.MeshBasicMaterial({ color: 0x0040ff, transparent: true, opacity: .55, side: THREE.DoubleSide, depthTest: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, clippingPlanes: CLIP });
+const hlMeshes = [];
+const triCache = new WeakMap();
+function trisOf(mesh) {
+  if (triCache.has(mesh)) return triCache.get(mesh);
+  const g = mesh.geometry, ob = g.attributes._obj, idx = g.index, map = new Map();
+  for (let t = 0; t < idx.count; t += 3) {
+    const o = ob.getX(idx.getX(t));
+    if (!map.has(o)) map.set(o, []);
+    map.get(o).push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
+  }
+  triCache.set(mesh, map); return map;
+}
+function refreshHL() {
+  hlMeshes.forEach(m => { m.parent?.remove(m); m.geometry.dispose(); }); hlMeshes.length = 0;
+  if (selObjs.size) nodes.forEach(N => N.meshes.forEach(m => {
+    if (!m.geometry.attributes._obj) return;
+    const map = trisOf(m); const arr = [];
+    selObjs.forEach(o => { const t = map.get(o); if (t) arr.push(...t); });
+    if (!arr.length) return;
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', m.geometry.attributes.position); g.setIndex(arr);
+    const h = new THREE.Mesh(g, hlMat); h.raycast = () => {}; m.add(h); hlMeshes.push(h);
+  }));
+  tubeMeshes.forEach(t => {
+    t.segs.forEach((ci, i) => t.mesh.setColorAt(i, selCurves.has(ci) ? new THREE.Color(.2, .5, 4) : new THREE.Color(1, 1, 1)));
+    t.mesh.instanceColor.needsUpdate = true;
+  });
+}
+function select(objIds = [], curveIds = []) {
+  selObjs = new Set(objIds); selCurves = new Set(curveIds); refreshHL();
+}
+function pickables() {
+  const arr = [];
+  nodes.forEach(N => { if (N.obj.visible) arr.push(...N.meshes); });
+  tubeMeshes.forEach(t => arr.push(t.mesh));
+  return arr;
+}
+const ray = new THREE.Raycaster(); ray.firstHitOnly = false;
+function pick(cx, cy) {
+  const r = renderer.domElement.getBoundingClientRect();
+  const ndc = new THREE.Vector2((cx - r.left) / r.width * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera); ray.far = 1000; ray.near = 0;
+  const hits = ray.intersectObjects(pickables(), false);
+  for (const h of hits) {
+    const env = h.object.userData.node?.env;
+    if (!env && clipped(h.point)) continue;
+    if (h.object.userData.glass) continue;
+    return h;
+  }
+  return null;
+}
+function objOfHit(h) {
+  if (h.object.userData.tube) { const t = tubeMeshes.find(t => t.mesh === h.object); return { curve: t.segs[h.instanceId] }; }
+  const a = h.object.geometry.attributes._obj; return a ? { obj: a.getX(h.face.a) } : {};
+}
+function showElement(sel) {
+  const box = $('#elBox'); box.innerHTML = '';
+  if (!sel || (sel.obj == null && sel.curve == null)) { box.textContent = 'Toca un elemento para ver qué es.'; return; }
+  const kv = []; let title;
+  if (sel.curve != null) {
+    const c = CURVES[sel.curve]; title = c.n;
+    kv.push(['Capa', pretty(c.l)], ['Sistema', c.us.sistema || '—'], ['Uso', c.us.uso || c.us.estancia || '—']);
+    if (c.us.circuito) kv.push(['Circuito', c.us.circuito]);
+    kv.push(['Diámetro', 'Ø' + (c.us.diametro_mm || '—') + ' mm'], ['Longitud', fmt(c.len) + ' m'], ['Planta', c.us.planta || '—']);
+  } else {
+    const o = OBJS[sel.obj]; title = o.n || '(sin nombre)';
+    kv.push(['Capa', pretty(o.l)], ['Planta', o.pl]);
+    if (o.k) kv.push(['Piezas', o.k]);
+    const m = o.m || {};
+    if (m.vol) kv.push(['Volumen', fmt(m.vol, 3) + ' m³']);
+    if (m.vert) kv.push(['Superficie de paramento (media de caras)', fmt(m.vert / 2) + ' m²']);
+    if (m.cara) kv.push(['Superficie (cara mayor)', fmt(m.cara) + ' m²']);
+    if (m.sup) kv.push(['Superficie en planta', fmt(m.sup) + ' m²']);
+    if (m.dx != null) kv.push(['Caja (x · y · alto)', `${fmt(m.dx)} · ${fmt(m.dy)} · ${fmt(m.dz)} m`]);
+    for (const [k, v] of Object.entries(o.us || {})) if (!['planta'].includes(k)) kv.push([k[0].toUpperCase() + k.slice(1).replace('_', ' '), v]);
+    if (o.id) kv.push(['Id en Rhino', o.id]);
+  }
+  const h = document.createElement('b'); h.textContent = title; box.appendChild(h);
+  const t = document.createElement('table'); t.className = 'med'; t.style.marginTop = '4px';
+  kv.forEach(([k, v]) => { const tr = t.insertRow(); tr.insertCell().textContent = k; tr.insertCell().textContent = v; });
+  box.appendChild(t);
+  const b = document.createElement('button'); b.className = 'lnk'; b.style.marginTop = '6px'; b.textContent = 'Quitar selección'; b.onclick = () => { select(); showElement(null); }; box.appendChild(b);
+}
+
+/* ---------------- toques en el lienzo ---------------- */
+let tool = 'none', toolHintOn = false;
+function setTool(t) {
+  tool = tool === t ? 'none' : t;
+  $('#tMed').setAttribute('aria-pressed', String(tool === 'medir'));
+  $('#fab').setAttribute('aria-pressed', String(tool === 'nota'));
+  $('#fab').textContent = tool === 'nota' ? 'Cancelar' : 'Nota +';
+  const hint = $('#hint');
+  toolHintOn = tool !== 'none';
+  hint.textContent = tool === 'medir' ? 'Toca el primer punto · luego el segundo' : 'Toca el punto del modelo donde va la nota';
+  hint.style.opacity = toolHintOn ? 1 : 0;
+  if (tool !== 'medir') mStart = null, clearTemp();
+  if (tool === 'nota') closeCard();
+}
+$('#tMed').onclick = () => setTool('medir');
+$('#fab').onclick = () => setTool('nota');
+let tapStart = null, lastTap = 0, lastXY = [0, 0];
+renderer.domElement.addEventListener('pointerdown', e => { tapStart = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId }; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!tapStart || e.pointerId !== tapStart.id) return;
+  if (Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) > 8 || performance.now() - tapStart.t > 600) return;
+  const now = performance.now();
+  const dbl = now - lastTap < 320 && Math.hypot(e.clientX - lastXY[0], e.clientY - lastXY[1]) < 30;
+  lastTap = now; lastXY = [e.clientX, e.clientY];
+  if (dbl && tool === 'none') return doubleTap(e);
+  tap(e);
+});
+function tap(e) {
+  if (mode === 'walk' && tool === 'none') return;
+  const h = pick(e.clientX, e.clientY);
+  if (tool === 'medir') return measureTap(e, h);
+  if (tool === 'nota') return h && placeNote(h);
+  if (!h) { select(); showElement(null); return; }
+  const s = objOfHit(h);
+  if (s.curve != null) select([], [s.curve]); else if (s.obj != null) select([s.obj]); else select();
+  showElement(s);
+}
+function doubleTap(e) {
+  const h = pick(e.clientX, e.clientY); if (!h) return;
+  if (mode === 'walk') {
+    const n = h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : new THREE.Vector3(0, -1, 0);
+    if (Math.abs(n.y) > 0.6) walkTo = new THREE.Vector3(h.point.x, h.point.y + EYE, h.point.z);
+  } else {
+    const off = camera.position.clone().sub(controls.target);
+    flyTo(h.point.clone().add(camera === persp ? off.multiplyScalar(0.6) : off), h.point.clone(), 600);
+  }
+}
+
+/* ---------------- medir ---------------- */
+const measures = []; let mStart = null; const mGroup = new THREE.Group(); scene.add(mGroup);
+const mMat = new THREE.LineBasicMaterial({ color: 0x0040ff, depthTest: false }), dotMat = new THREE.MeshBasicMaterial({ color: 0x0040ff, depthTest: false });
+const dotGeo = new THREE.SphereGeometry(1, 12, 8);
+let tempObjs = [];
+function clearTemp() { tempObjs.forEach(o => mGroup.remove(o)); tempObjs = []; }
+function dot(p) { const m = new THREE.Mesh(dotGeo, dotMat); m.position.copy(p); m.renderOrder = 10; m.userData.dot = true; mGroup.add(m); return m; }
+function snapPoint(h, e) {
+  if (!$('#cSnap').checked || !h.face || h.object.userData.tube) return h.point.clone();
+  const pos = h.object.geometry.attributes.position, r = renderer.domElement.getBoundingClientRect();
+  let best = null, bd = 16;
+  for (const i of [h.face.a, h.face.b, h.face.c]) {
+    const v = new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(h.object.matrixWorld);
+    const s = v.clone().project(camera); const sx = (s.x + 1) / 2 * r.width + r.left, sy = (1 - s.y) / 2 * r.height + r.top;
+    const dd = Math.hypot(sx - e.clientX, sy - e.clientY); if (dd < bd) { bd = dd; best = v; }
+  }
+  return best || h.point.clone();
+}
+function measureTap(e, h) {
+  if (!h) return;
+  const p = snapPoint(h, e);
+  if (!mStart) { mStart = p; clearTemp(); tempObjs.push(dot(p)); $('#hint').textContent = 'Toca el segundo punto'; return; }
+  const a = mStart, b = p; mStart = null; clearTemp();
+  const g = new THREE.BufferGeometry().setFromPoints([a, b]); const line = new THREE.Line(g, mMat); line.renderOrder = 10;
+  const da = dot(a), db = dot(b); mGroup.add(line);
+  const lab = document.createElement('div'); lab.className = 'mlab'; $('#pins').appendChild(lab);
+  const d = a.distanceTo(b), dh = Math.hypot(b.x - a.x, b.z - a.z), dv = Math.abs(b.y - a.y);
+  lab.textContent = fmt(d) + ' m';
+  measures.push({ a, b, d, dh, dv, objs: [line, da, db], lab });
+  $('#hint').textContent = 'Toca el primer punto de otra medida';
+  renderMeasures();
+}
+function renderMeasures() {
+  const t = $('#mList'); t.innerHTML = '';
+  measures.forEach((m, i) => { const tr = document.createElement('tr'); tr.innerHTML = `<td>${i + 1} · horizontal ${fmt(m.dh)} · vertical ${fmt(m.dv)}</td><td>${fmt(m.d)} m</td>`; t.appendChild(tr); });
+}
+$('#mClear').onclick = () => { measures.forEach(m => { m.objs.forEach(o => mGroup.remove(o)); m.lab.remove(); }); measures.length = 0; renderMeasures(); };
+
+/* ---------------- recorrido ---------------- */
+let mode = 'orbit';
+const EYE = 1.6, DOWN = new THREE.Vector3(0, -1, 0);
+let yaw = 0, pitch = 0, joyV = { x: 0, y: 0 }, vel = new THREE.Vector3(), walkTo = null;
+const wray = new THREE.Raycaster(); wray.firstHitOnly = true;
+const visHouse = () => nodes.filter(N => !N.env && !N.inst && N.obj.visible).flatMap(N => N.meshes).filter(m => !m.userData.glass);
+function groundAt(x, y, z) { wray.set(new THREE.Vector3(x, y, z), DOWN); wray.far = 4; const h = wray.intersectObjects(visHouse(), false)[0]; return h ? h.point.y : null; }
+function startWalk() {
+  $('#tWalk').setAttribute('aria-pressed', 'true');
+  mode = 'walk'; controls.enabled = false; anim = null;
+  useCamera(persp); sep = 0; setSec('h', false); setSec('l', false); setSec('t', false); envAuto = true; refresh();
+  $('#joy').hidden = false;
+  const c = ZONES[lastFloor].getCenter(new THREE.Vector3()); const fy = FLOORS[lastFloor];
+  let start = null, best = 1e9;
+  for (let r = 0; r < 4; r += 0.25) for (let a = 0; a < 12; a++) {
+    const x = c.x + Math.cos(a * Math.PI / 6) * r, z = c.z + Math.sin(a * Math.PI / 6) * r;
+    const g = groundAt(x, fy + 0.3, z); if (g === null || Math.abs(g - fy) > 0.08) continue;
+    wray.set(new THREE.Vector3(x, g + 0.1, z), new THREE.Vector3(0, 1, 0)); wray.far = 1.9;
+    if (wray.intersectObjects(visHouse(), false).length) continue;
+    if (r < best) { best = r; start = new THREE.Vector3(x, g + EYE, z); }
+  }
+  start = start || new THREE.Vector3(c.x, fy + EYE, c.z);
+  camera.position.copy(start); pitch = -0.08; let far = -1;
+  for (let a = 0; a < 16; a++) {
+    const yw = a * Math.PI / 8, dir = new THREE.Vector3(-Math.sin(yw), 0, -Math.cos(yw));
+    wray.set(start.clone().setY(start.y - 0.2), dir); wray.far = 30;
+    const h = wray.intersectObjects(visHouse(), false)[0], dist = h ? h.distance : 0;
+    if (dist > far) { far = dist; yaw = yw; }
+  }
+  applyLook(); $('#hint').textContent = 'Arrastra para mirar · joystick para andar · doble toque en el suelo para ir'; $('#hint').style.opacity = 1; setTimeout(() => { if (!toolHintOn) $('#hint').style.opacity = 0; }, 4000);
+}
+function stopWalk() {
+  $('#tWalk').setAttribute('aria-pressed', 'false');
+  if (mode !== 'walk') return;
+  mode = 'orbit'; controls.enabled = true; $('#joy').hidden = true;
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir); controls.target.copy(camera.position).addScaledVector(dir, 2);
+}
+function applyLook() { camera.rotation.set(pitch, yaw, 0, 'YXZ'); }
+let look = null;
+renderer.domElement.addEventListener('pointerdown', e => { if (mode === 'walk') { look = { id: e.pointerId, x: e.clientX, y: e.clientY }; renderer.domElement.setPointerCapture(e.pointerId); } });
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!look || e.pointerId !== look.id) return;
+  yaw -= (e.clientX - look.x) * 0.005; pitch = Math.max(-1.3, Math.min(1.3, pitch - (e.clientY - look.y) * 0.005)); look.x = e.clientX; look.y = e.clientY; applyLook();
+});
+['pointerup', 'pointercancel'].forEach(t => renderer.domElement.addEventListener(t, e => { if (look && e.pointerId === look.id) look = null; }));
+const joy = $('#joy'), knob = joy.querySelector('i'); let jid = null;
+joy.addEventListener('pointerdown', e => { jid = e.pointerId; joy.setPointerCapture(jid); moveJoy(e); });
+joy.addEventListener('pointermove', e => { if (e.pointerId === jid) moveJoy(e); });
+['pointerup', 'pointercancel'].forEach(t => joy.addEventListener(t, e => { if (e.pointerId === jid) { jid = null; joyV = { x: 0, y: 0 }; knob.style.transform = ''; } }));
+function moveJoy(e) {
+  const r = joy.getBoundingClientRect(), R = r.width / 2; let dx = e.clientX - r.left - R, dy = e.clientY - r.top - R;
+  const l = Math.hypot(dx, dy), m = R - 20; if (l > m) { dx *= m / l; dy *= m / l; }
+  knob.style.transform = `translate(${dx}px,${dy}px)`; joyV = { x: dx / m, y: dy / m };
+}
+const keys = {}; addEventListener('keydown', e => { if (e.target.closest?.('input,textarea,select')) return; keys[e.code] = true; }); addEventListener('keyup', e => keys[e.code] = false);
+function walkStep(dt) {
+  const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), right = new THREE.Vector3(-fwd.z, 0, fwd.x);
+  let f = -joyV.y, s = joyV.x;
+  if (keys.KeyW || keys.ArrowUp) f += 1; if (keys.KeyS || keys.ArrowDown) f -= 1; if (keys.KeyD) s += 1; if (keys.KeyA) s -= 1;
+  if (keys.ArrowLeft) { yaw += dt * 1.8; applyLook(); } if (keys.ArrowRight) { yaw -= dt * 1.8; applyLook(); }
+  const want = fwd.multiplyScalar(f).add(right.multiplyScalar(s));
+  if (walkTo) { const d = walkTo.clone().sub(camera.position); d.y = 0; if (d.length() < 0.15 || want.lengthSq() > 0.01) walkTo = null; else want.copy(d.normalize()); }
+  vel.lerp(want.clampLength(0, 1).multiplyScalar(1.6), Math.min(1, dt * 8));
+  const step = vel.clone().multiplyScalar(dt), len = step.length();
+  if (len > 1e-5) {
+    const dir = step.clone().normalize(); let blocked = false;
+    for (const hgt of [0.6, 1.1]) { wray.set(camera.position.clone().setY(camera.position.y - hgt), dir); wray.far = len + 0.3; if (wray.intersectObjects(visHouse(), false).length) { blocked = true; break; } }
+    if (!blocked) camera.position.add(step); else { vel.set(0, 0, 0); walkTo = null; }
+  }
+  const g = groundAt(camera.position.x, camera.position.y - EYE + 0.45, camera.position.z);
+  if (g !== null) camera.position.y += (g + EYE - camera.position.y) * Math.min(1, dt * 10);
+}
+
+/* ---------------- mediciones ---------------- */
+const baseName = n => n.replace(/\s\d+(?=\s|$|\))/g, '').replace(/\s{2,}/g, ' ').trim().replace(/ - /g, ' · ');
+const unitOf = n => n.split(' - ').slice(0, 2).join(' - ');
+function partidaDe(o) {
+  const L = o.l, m = o.m || {}, n = o.n || '';
+  if (L === 'Personas') return null;
+  if (L === 'Muros') return ['01 Albañilería', 'Muros y tabiques (paramento)', 'm²', m.vert ? m.vert / 2 : (m.cara || 0)];
+  if (L === 'Estructura') return ['01 Albañilería', baseName(n) || 'Pilar', 'ud', 1];
+  if (L === 'Suelo +0,00') return ['02 Pavimentos y techos', 'Pavimento', 'm²', m.sup || m.cara || 0];
+  if (L === 'Techo +2,40') return ['02 Pavimentos y techos', 'Techo a +2,40', 'm²', m.cara || 0];
+  if (L === 'Revestimientos') return ['03 Revestimientos', 'Alicatado 10×10 blanco mate, junta clara', 'm²', m.cara || 0];
+  if (L === 'Vidrio') { const b = baseName(n); return ['04 Carpinterías y vidrios', /pavés/i.test(n) ? 'Pavés de vidrio' : /vidrio/i.test(b) ? b : b + ' · vidrio', 'm²', m.cara || 0]; }
+  if (L === 'Carpintería') return ['04 Carpinterías y vidrios', baseName(unitOf(n)), 'ud', 0, unitOf(n), n];
+  if (L === 'Mobiliario') {
+    if (/^Encimera \d \(|tablero/i.test(n)) return ['05 Mobiliario y encimeras', baseName(n.replace(/ - tablero.*$/i, '')) + ' · tablero', 'm²', m.sup || 0];
+    if (/^Aseo - armario columna/.test(n)) return ['05 Mobiliario y encimeras', 'Aseo · armario columna', 'ud', 0, 'Aseo - armario columna', n];
+    let nm = n.replace(/^(Taburete) \d+/, '$1').replace(/\s*\(z[^)]*\)/, '').replace(/ - balda \d$/, ' - balda').replace(/ - balda (\d{2})$/, ' - balda $1 cm');
+    return ['05 Mobiliario y encimeras', nm.replace(/ - /g, ' · ') || 'Mueble', 'ud', 1];
+  }
+  if (L === 'Electrodomésticos') return ['06 Electrodomésticos', baseName(unitOf(n)), 'ud', 0, unitOf(n), n];
+  if (L === 'Sanitarios') return ['07 Sanitarios y grifería', baseName(unitOf(n)), 'ud', 0, unitOf(n), n];
+  if (L === 'Iluminación') { const u = n.split(' - ')[0]; return ['08 Iluminación', baseName(u), 'ud', 0, u, n]; }
+  if (L === 'Textiles') { const u = n.split(' - ')[0]; return ['09 Textiles', baseName(u), 'ud', 0, u, n]; }
+  return ['10 Otras', baseName(n) || pretty(L), 'ud', 1];
+}
+function partidaCurva(c) { return ['10 Otras', c.n, 'm', c.len]; }
+function objVisible(o) { return layerVis[o.l] !== false && (PIDX(o.pl) == null || plantaVis[o.pl]); }
+function partidas(onlyVis) {
+  const map = new Map();
+  const add = (p, oi, ci) => {
+    if (!p) return; const [cap, nombre, ud, q, unit, part] = p; const key = cap + '|' + nombre + '|' + ud;
+    if (!map.has(key)) map.set(key, { key, cap, nombre, ud, q: 0, n: 0, ids: [], cids: [], units: new Map() });
+    const r = map.get(key); r.q += q; r.n++; if (oi != null) r.ids.push(oi); if (ci != null) r.cids.push(ci);
+    if (unit) { if (!r.units.has(unit)) r.units.set(unit, new Map()); const u = r.units.get(unit); u.set(part, (u.get(part) || 0) + 1); }
+  };
+  OBJS.forEach((o, i) => { if (onlyVis && !objVisible(o)) return; add(partidaDe(o), i, null); });
+  CURVES.forEach((c, i) => { if (onlyVis && layerVis[c.l] === false) return; add(partidaCurva(c), null, i); });
+  for (const r of map.values()) if (r.ud === 'ud' && r.q === 0) r.q = r.units.size || r.n;
+  return [...map.values()].sort((a, b) => a.cap.localeCompare(b.cap, 'es') || a.nombre.localeCompare(b.nombre, 'es'));
+}
+function updVisMed() {
+  const rows = partidas(true); const caps = new Map();
+  rows.forEach(r => { if (!caps.has(r.cap)) caps.set(r.cap, []); caps.get(r.cap).push(r); });
+  const t = $('#visMed'); t.innerHTML = '';
+  for (const [cap, rs] of caps) {
+    const byUd = {}; rs.forEach(r => byUd[r.ud] = (byUd[r.ud] || 0) + r.q);
+    const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td>';
+    tr.children[0].textContent = cap.replace(/^\d+ /, ''); tr.children[1].textContent = Object.entries(byUd).map(([u, q]) => fmt(q, u === 'ud' ? 0 : 2) + ' ' + u).join(' · ');
+    t.appendChild(tr);
+  }
+  if (!$('#med').hidden) renderMed();
+}
+
+/* pestaña de mediciones */
+const prices = {}; let pricesDb = null, canWrite = false, dlCap = null;
+const pid = k => { let h = 5381; for (const ch of k) h = ((h << 5) + h + ch.charCodeAt(0)) >>> 0; return 'p' + h.toString(36); };
+function setTab(t) {
+  $$('#tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.t === t)));
+  $('#med').hidden = t !== 'med';
+  if (t === 'med') renderMed();
+}
+$$('#tabs button').forEach(b => b.onclick = () => setTab(b.dataset.t));
+$('#goMed').onclick = () => setTab('med');
+$('#mVis').onchange = () => renderMed();
+let medRows = [];
+function renderMed() {
+  const onlyVis = $('#mVis').checked; medRows = partidas(onlyVis);
+  $('#medSub').textContent = `Modelo 261102_base.3dm · ${onlyVis ? 'medido lo visible' : 'todo el modelo'} · ${medRows.length} partidas. Toca una fila para verla en 3D.`;
+  const t = $('#ptab'); t.innerHTML = '<thead><tr><th>Partida</th><th>Ud</th><th class="n">Nº</th><th class="n">Cantidad</th><th class="n">€/ud</th><th class="n">Importe</th></tr></thead>';
+  const tb = document.createElement('tbody'); let cap = null, capTot = 0, capRow = null, total = 0;
+  const closeCap = () => { if (capRow) capRow.lastChild.textContent = fmt(capTot) + ' €'; };
+  medRows.forEach(r => {
+    if (r.cap !== cap) { closeCap(); cap = r.cap; capTot = 0; capRow = document.createElement('tr'); capRow.className = 'cap'; capRow.innerHTML = '<td colspan="5"></td><td class="n"></td>'; capRow.firstChild.textContent = cap; tb.appendChild(capRow); }
+    const pr = prices[pid(r.key)] ?? null; const imp = pr != null ? pr * r.q : 0; capTot += imp; total += imp;
+    const tr = document.createElement('tr'); tr.className = 'fila-tipo';
+    tr.innerHTML = `<td></td><td>${r.ud}</td><td class="n">${r.n}</td><td class="n">${fmt(r.q, r.ud === 'ud' ? 0 : 2)}</td><td class="n"><input inputmode="decimal" aria-label="Precio unitario"></td><td class="n">${pr != null ? fmt(imp) + ' €' : '—'}</td>`;
+    tr.firstChild.textContent = r.nombre;
+    const inp = tr.querySelector('input'); inp.value = pr != null ? fmt(pr) : ''; inp.disabled = !canWrite; inp.placeholder = canWrite ? '—' : '';
+    inp.onclick = e => e.stopPropagation();
+    inp.onchange = () => savePrice(r.key, inp.value);
+    tr.onclick = () => { setTab('3d'); select(r.ids, r.cids); showElement(r.ids.length ? { obj: r.ids[0] } : r.cids.length ? { curve: r.cids[0] } : null); };
+    tb.appendChild(tr);
+  });
+  closeCap();
+  const tt = document.createElement('tr'); tt.className = 'total'; tt.innerHTML = '<td colspan="5">Total PEM</td><td class="n"></td>'; tt.lastChild.textContent = fmt(total) + ' €'; tb.appendChild(tt);
+  t.appendChild(tb); $('#pemT').textContent = fmt(total) + ' €';
+}
+async function savePrice(key, val) {
+  const v = val.trim() === '' ? null : +val.replace(/\./g, '').replace(',', '.');
+  if (v != null && !isFinite(v)) { flash('Escribe el precio como número, por ejemplo 45,50'); return; }
+  const id = pid(key);
+  if (v == null) delete prices[id]; else prices[id] = v;
+  renderMed();
+  if (!pricesDb) return;
+  try { if (v == null) await pricesDb.collection('precios').doc(id).delete(); else await pricesDb.collection('precios').doc(id).set({ partida: key, precio: v }); }
+  catch (e) { flash('No se pudo guardar el precio'); }
+}
+$('#xls').onclick = async () => {
+  if (!window.XLSX) { flash('El generador de Excel no se ha cargado'); return; }
+  const aoa = [['Capítulo', 'Partida', 'Ud', 'Nº', 'Cantidad', '€/ud', 'Importe']];
+  let tot = 0;
+  medRows.forEach(r => { const p = prices[pid(r.key)] ?? null; const imp = p != null ? +(p * r.q).toFixed(2) : null; tot += imp || 0; aoa.push([r.cap, r.nombre, r.ud, r.n, +r.q.toFixed(3), p, imp]); });
+  aoa.push([], ['', 'Total PEM', '', '', '', '', +tot.toFixed(2)]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols'] = [{ wch: 34 }, { wch: 52 }, { wch: 5 }, { wch: 5 }, { wch: 10 }, { wch: 10 }, { wch: 12 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Mediciones');
+  const data = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  await saveFile('Mediciones Compañía.xlsx', new Blob([data]));
+};
+async function saveFile(name, data) {
+  if (!dlCap) {
+    const blob = data instanceof Blob ? data : new Blob([data], { type: name.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); return;
+  }
+  try { await dlCap.save({ filename: name, data }); }
+  catch (e) { if (e.code !== 'declined') flash(e.code === 'rate_limited' ? 'Espera un momento y vuelve a intentarlo' : 'No se pudo descargar el archivo'); }
+}
+
+/* ---------------- exportar ---------------- */
+let scaleK = '100';
+$$('#scale button').forEach(b => b.onclick = () => { scaleK = b.dataset.k; $$('#scale button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); updExportNote(); });
+function updExportNote() {
+  $('#eNote').textContent = camera === ortho
+    ? 'El SVG sale con las líneas ocultas quitadas, trazo de 0,05 mm y textos vivos; la escala vale en axonometría, planta y alzados.'
+    : 'En perspectiva no hay escala: el SVG se ajusta a A3. Para exportar a escala quita la perspectiva.';
+}
+$('#ePng').onclick = () => {
+  renderer.render(scene, camera);
+  renderer.domElement.toBlob(b => b && saveFile('Vista Compañía.png', b), 'image/png');
+};
+$('#eSvg').onclick = () => exportSVG();
+function exportSVG() {
+  // 1) profundidad de la escena
+  const w = Math.round(W), h = Math.round(H);
+  const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.UnsignedByteType });
+  const depthMat = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide, clippingPlanes: CLIP });
+  const hidden = []; scene.traverse(o => { if ((o.isLineSegments || o.isLine || o.userData.dot) && o.visible) { hidden.push(o); o.visible = false; } });
+  const bg = scene.background; scene.background = null; scene.overrideMaterial = depthMat; const fog = scene.fog; scene.fog = null;
+  renderer.setRenderTarget(rt); renderer.setClearColor(0xffffff, 1); renderer.clear(); renderer.render(scene, camera); renderer.setRenderTarget(null);
+  scene.overrideMaterial = null; scene.background = bg; scene.fog = fog; hidden.forEach(o => o.visible = true);
+  const buf = new Uint8Array(w * h * 4); renderer.readRenderTargetPixels(rt, 0, 0, w, h, buf); rt.dispose();
+  const depthAt = (x, y) => { x = Math.min(w - 1, Math.max(0, x | 0)); y = Math.min(h - 1, Math.max(0, y | 0)); const i = ((h - 1 - y) * w + x) * 4; return buf[i] / 256 + buf[i + 1] / 65536 + buf[i + 2] / 16777216 + buf[i + 3] / 4278190080; };
+  const near = camera.near, far = camera.far;
+  const toDepth = ndcZ => { // profundidad empaquetada que escribe MeshDepthMaterial (0..1 lineal en orto, no lineal en persp)
+    return (ndcZ + 1) / 2;
+  };
+  // 2) aristas visibles
+  const segs = [];
+  const A = new THREE.Vector3(), B = new THREE.Vector3(), P = new THREE.Vector3(), Pw = new THREE.Vector3();
+  const proj = v => { const s = v.clone().project(camera); return { x: (s.x + 1) / 2 * w, y: (1 - s.y) / 2 * h, z: toDepth(s.z) }; };
+  const linZ = d => camera === ortho ? near + d * (far - near) : -(near * far) / ((far - near) * d - far);
+  const visible = (wp) => { if (clipped(wp)) return false; const s = proj(wp); if (s.x < 0 || s.y < 0 || s.x > w || s.y > h || s.z > 1) return false; let best = 1; for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]]) best = Math.min(best, depthAt(s.x + dx, s.y + dy)); const zp = linZ(s.z), zb = linZ(best); return zp <= zb + 0.04 + 0.004 * Math.abs(zb); };
+  const addEdge = (a, b, color, inst) => {
+    const sa = proj(a), sb = proj(b); const L = Math.hypot(sb.x - sa.x, sb.y - sa.y); const n = Math.max(2, Math.ceil(L / 2));
+    let run = null;
+    for (let i = 0; i <= n; i++) {
+      Pw.lerpVectors(a, b, i / n);
+      const v = inst ? !clipped(Pw) : visible(Pw);
+      const s = proj(Pw);
+      if (v) { if (!run) run = [s, s]; else run[1] = s; }
+      if ((!v || i === n) && run) { if (Math.hypot(run[1].x - run[0].x, run[1].y - run[0].y) > 0.3) segs.push([run[0].x, run[0].y, run[1].x, run[1].y, color]); run = null; }
+    }
+  };
+  nodes.forEach(N => N.meshes.forEach(m => {
+    if (!isVisible(m) || !m.userData.edges) return;
+    const pos = m.userData.edges.geometry.attributes.position; m.updateMatrixWorld();
+    for (let i = 0; i < pos.count; i += 2) { A.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); B.fromBufferAttribute(pos, i + 1).applyMatrix4(m.matrixWorld); addEdge(A, B, N.env ? '#8a8a8a' : N.inst ? '#3c3c3c' : '#000'); }
+  }));
+  CURVES.forEach((c, ci) => { const pts = curveDisp[ci]; if (!pts) return; for (let k = 0; k < pts.length - 1; k++) addEdge(pts[k], pts[k + 1], `rgb(${c.c.join(',')})`, false); });
+  // 3) escala y papel
+  let mmPerPx, pageW, pageH;
+  const pxPerM = camera === ortho ? h / ((ortho.top - ortho.bottom) / ortho.zoom) : null;
+  if (camera === ortho && scaleK !== 'A3') { mmPerPx = (1000 / +scaleK) / pxPerM; pageW = w * mmPerPx; pageH = h * mmPerPx; }
+  else { mmPerPx = Math.min(400 / w, 277 / h); pageW = 420; pageH = 297; }
+  const ox = (pageW - w * mmPerPx) / 2, oy = (pageH - h * mmPerPx) / 2;
+  const byColor = new Map(); segs.forEach(s => { if (!byColor.has(s[4])) byColor.set(s[4], []); byColor.get(s[4]).push(s); });
+  const f = v => +v.toFixed(2);
+  let body = '';
+  for (const [col, ss] of byColor) body += `<path stroke="${col}" d="${ss.map(s => `M${f(ox + s[0] * mmPerPx)} ${f(oy + s[1] * mmPerPx)}L${f(ox + s[2] * mmPerPx)} ${f(oy + s[3] * mmPerPx)}`).join('')}"/>`;
+  const vista = preset ? PNAME[preset] : $('#sub').textContent;
+  const esc = camera === ortho && scaleK !== 'A3' ? `Escala 1:${scaleK}` : (camera === ortho ? `Escala aprox. 1:${Math.round(1000 / (pxPerM * mmPerPx))}` : 'Sin escala (perspectiva)');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${f(pageW)}mm" height="${f(pageH)}mm" viewBox="0 0 ${f(pageW)} ${f(pageH)}"><g fill="none" stroke-width="0.05" stroke-linecap="round">${body}</g><text x="${f(pageW - 8)}" y="${f(pageH - 8)}" text-anchor="end" font-family="Arial" font-size="3">Compañía · reforma de cocina y aseo · ${vista} · ${esc}</text></svg>`;
+  saveFile('Vista Compañía.svg', svg);
+}
+
+/* ---------------- notas compartidas ---------------- */
+const RH = { ox: 850, oy: 355, oz: 0 };
+const toRhino = p => [+(p.x * 100 + RH.ox).toFixed(1), +(-p.z * 100 + RH.oy).toFixed(1), +(p.y * 100 + RH.oz).toFixed(1)];
+const estanciaDe = p => { const X = p.x * 100 + 850, Y = -p.z * 100 + 355; if (X > 1095 && X < 1610 && Y > 425 && Y < 575) return 'Aseo'; if (X > 1478 && X < 1573 && Y > 330 && Y < 465) return 'Despensa'; return 'Cocina'; };
+const fmtFecha = t => new Date(t).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+let notesDb = null, userCap = null, myId = null;
+let notes = []; const pinEls = new Map(); let draft = null, openId = null, filter = 'open';
+(async () => {
+  if (!window.claude?.use) return;
+  const [db, user, dl] = await Promise.all([claude.use('db'), claude.use('user'), claude.use('downloads')]);
+  notesDb = pricesDb = db; userCap = user; dlCap = dl;
+  if (!db) return;
+  myId = user ? await user.id() : null;
+  const cw = user ? await user.can('data.write') : null; canWrite = cw !== false;
+  $('#secNotas').hidden = false; $('#fab').hidden = !canWrite;
+  db.collection('notas').orderBy('creado', 'asc').onSnapshot(snap => { notes = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderNotes(); }, err => console.warn('notas', err.code));
+  db.collection('precios').onSnapshot(snap => {
+    for (const k of Object.keys(prices)) delete prices[k];
+    snap.docs.forEach(d => { const v = d.data().precio; if (typeof v === 'number') prices[d.id] = v; });
+    if (!$('#med').hidden) renderMed();
+  }, err => console.warn('precios', err.code));
+  if (!$('#med').hidden) renderMed();
+})();
+const numOf = id => notes.findIndex(n => n.id === id) + 1;
+function renderNotes() {
+  const open = notes.filter(n => n.estado !== 'hecha').length;
+  $('#nCount').textContent = notes.length ? `${open} abiertas · ${notes.length} en total` : '';
+  const seen = new Set();
+  notes.forEach((n, i) => {
+    seen.add(n.id); let el = pinEls.get(n.id);
+    if (!el) { el = document.createElement('button'); el.className = 'pin'; el.onclick = ev => { ev.stopPropagation(); openCard(n.id); }; $('#pins').appendChild(el); pinEls.set(n.id, el); el._v = new THREE.Vector3(); }
+    el._v.fromArray(n.p); el.textContent = i + 1;
+    el.classList.toggle('done', n.estado === 'hecha'); el.setAttribute('aria-label', `Nota ${i + 1}: ${n.texto}`);
+  });
+  for (const [id, el] of pinEls) if (id !== '_draft' && !seen.has(id)) { el.remove(); pinEls.delete(id); }
+  const list = $('#nList'); list.innerHTML = '';
+  const shown = notes.map((n, i) => [n, i + 1]).filter(([n]) => filter === 'all' || n.estado !== 'hecha').reverse();
+  if (!shown.length) { const d = document.createElement('p'); d.className = 'nota'; d.textContent = notes.length ? 'No hay notas abiertas. Las resueltas están en «Todas».' : canWrite ? 'Aún no hay notas. Pulsa «+ Nota» y toca un punto del modelo para dejar la primera.' : 'Aún no hay notas en este modelo.'; list.appendChild(d); }
+  shown.forEach(([n, k]) => {
+    const b = document.createElement('button'); b.className = 'nota-i' + (n.estado === 'hecha' ? ' done' : '');
+    b.innerHTML = '<span class="ped"></span><span class="txt"></span><span class="meta"></span>'; b.querySelector('.ped').textContent = k; b.querySelector('.txt').textContent = n.texto;
+    b.querySelector('.meta').append(n.planta, document.createElement('br'), fmtFecha(n.creado));
+    b.onclick = () => { goToNote(n); openCard(n.id); }; list.appendChild(b);
+  });
+  if (openId) { if (notes.some(n => n.id === openId)) fillCard(openId); else closeCard(); }
+}
+const _p = new THREE.Vector3();
+function projectEl(el, v) {
+  _p.copy(v).project(camera);
+  const vis = _p.z < 1 && _p.z > -1 && Math.abs(_p.x) < 1.1 && Math.abs(_p.y) < 1.1;
+  el.style.display = vis ? '' : 'none';
+  if (vis) el.style.transform = `translate(${(_p.x + 1) / 2 * W}px,${(1 - _p.y) / 2 * H}px)` + (el.classList.contains('mlab') ? ' translate(-50%,-130%)' : '');
+}
+function updateOverlay() {
+  for (const [id, el] of pinEls) {
+    const v = el._v.clone(); v.y += plantaAtY(v.y) * sep;
+    if (clipped(v) || (mode === 'walk' && v.distanceTo(camera.position) > 14)) { el.style.display = 'none'; continue; }
+    projectEl(el, v); el.classList.toggle('hl', id === openId || id === '_draft');
+  }
+  const k = camera === ortho ? (ortho.top - ortho.bottom) / ortho.zoom / H : null;
+  mGroup.children.forEach(o => { if (o.userData.dot) { const s = k ? k * 4 : o.position.distanceTo(camera.position) * 0.006; o.scale.setScalar(s); } });
+  measures.forEach(m => projectEl(m.lab, m.a.clone().lerp(m.b, .5)));
+}
+function placeNote(hit) {
+  const p = hit.point.clone(); p.y -= plantaAtY(p.y - (sep ? 0 : 0)) * sep; // a coordenadas reales
+  const s = objOfHit(hit); const capa = s.curve != null ? CURVES[s.curve].l : s.obj != null ? OBJS[s.obj].l : (hit.object.userData.node?.layer || '');
+  draft = { p: [+p.x.toFixed(3), +p.y.toFixed(3), +p.z.toFixed(3)], rhino: toRhino(p), capa, elemento: s.obj != null ? (OBJS[s.obj].n || '') : s.curve != null ? CURVES[s.curve].n : '', planta: estanciaDe(p),
+    vista: { pos: camera.position.toArray().map(v => +v.toFixed(3)), target: (mode === 'walk' ? [p.x, p.y, p.z] : controls.target.toArray()).map(v => +v.toFixed(3)), corte: sec.h.on ? sec.h.v : null } };
+  setTool('nota');
+  $('#cMeta').textContent = '';
+  [draft.planta, pretty(draft.capa), draft.elemento].filter(Boolean).forEach(t => { const sp = document.createElement('span'); sp.textContent = t; $('#cMeta').appendChild(sp); });
+  $('#composer').hidden = false; $('#cText').value = ''; setTimeout(() => $('#cText').focus(), 50);
+  pinEls.get('_draft')?.remove();
+  const dp = document.createElement('div'); dp.className = 'pin hl'; dp.textContent = '+'; dp._v = new THREE.Vector3().fromArray(draft.p); $('#pins').appendChild(dp); pinEls.set('_draft', dp);
+}
+function dropDraft() { draft = null; pinEls.get('_draft')?.remove(); pinEls.delete('_draft'); $('#composer').hidden = true; }
+$('#cCancel').onclick = dropDraft;
+$('#composer').addEventListener('submit', async ev => {
+  ev.preventDefault(); const texto = $('#cText').value.trim(); if (!texto || !draft) return;
+  const btn = $('#cSave'); btn.disabled = true; btn.textContent = 'Guardando…';
+  try { await notesDb.collection('notas').doc().set({ ...draft, texto, estado: 'abierta', autor: myId, creado: Date.now() }); dropDraft(); flash('Nota guardada'); }
+  catch (err) { flash(err.code === 'invalid_argument' ? 'No tienes permiso para añadir notas en este modelo' : 'No se pudo guardar. Inténtalo de nuevo.'); if (err.code === 'invalid_argument') { canWrite = false; $('#fab').hidden = true; } }
+  finally { btn.disabled = false; btn.textContent = 'Guardar nota'; }
+});
+function openCard(id) { openId = id; dropDraft(); fillCard(id); $('#card').hidden = false; }
+function closeCard() { openId = null; $('#card').hidden = true; }
+async function fillCard(id) {
+  const n = notes.find(x => x.id === id); if (!n) return;
+  const m = $('#kMeta'); m.textContent = '';
+  const parts = [`Nota ${numOf(id)}`, n.planta, pretty(n.capa || ''), n.elemento || '', fmtFecha(n.creado), n.estado === 'hecha' ? 'Resuelta' : 'Abierta'].filter(Boolean);
+  if (userCap && n.autor) { const ps = await userCap.profiles([n.autor]).catch(() => ({})); parts.splice(parts.length - 1, 0, (n.autor === myId ? 'Tú' : ps?.[n.autor]?.name) || 'Alguien'); }
+  parts.forEach(t => { const s = document.createElement('span'); s.textContent = t; m.appendChild(s); });
+  $('#kText').textContent = n.texto;
+  $('#kState').textContent = n.estado === 'hecha' ? 'Reabrir' : 'Marcar resuelta'; $('#kState').hidden = !canWrite;
+  $('#kDel').hidden = !canWrite || !(n.autor === myId || (userCap && await userCap.isOwner()));
+}
+$('#kClose').onclick = closeCard;
+$('#kState').onclick = async () => { const n = notes.find(x => x.id === openId); if (!n) return; try { await notesDb.collection('notas').doc(n.id).update({ estado: n.estado === 'hecha' ? 'abierta' : 'hecha' }); } catch { flash('No se pudo cambiar el estado'); } };
+let delArmed = false;
+$('#kDel').onclick = async () => {
+  if (!delArmed) { delArmed = true; $('#kDel').textContent = '¿Seguro? Toca otra vez'; setTimeout(() => { delArmed = false; $('#kDel').textContent = 'Borrar'; }, 3000); return; }
+  delArmed = false; $('#kDel').textContent = 'Borrar'; const id = openId; closeCard();
+  try { await notesDb.collection('notas').doc(id).delete(); flash('Nota borrada'); } catch { flash('No se pudo borrar'); }
+};
+$$('#nFilt button').forEach(b => b.onclick = () => { filter = b.dataset.f; $$('#nFilt button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderNotes(); });
+function goToNote(n) {
+  stopWalk(); setTab('3d'); useCamera(persp);
+  const c = n.vista?.corte ?? null; const key = c == null ? 'ext' : (n.planta === 'Aseo' ? 'aseo' : 'coc');
+  $$('#qv button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (key || '')))); setSub(key ? SUB[key] : 'Nota');
+  if (c == null) { setSec('h', false); envAuto = true; } else { setSec('h', true, c); envAuto = true; }
+  refresh();
+  const tgt = new THREE.Vector3().fromArray(n.p); tgt.y += plantaAtY(tgt.y) * sep;
+  let pos = new THREE.Vector3().fromArray(n.vista?.pos || [tgt.x + 6, tgt.y + 6, tgt.z + 6]);
+  if (pos.distanceTo(tgt) < 1.5) pos = tgt.clone().add(pos.clone().sub(tgt).setLength(1.5));
+  flyTo(pos, tgt);
+}
+let flashT;
+function flash(t) { const h = $('#hint'); h.textContent = t; h.style.opacity = 1; clearTimeout(flashT); flashT = setTimeout(() => { if (!toolHintOn) h.style.opacity = 0; }, 2600); }
+
+/* ---------------- bucle ---------------- */
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (mode === 'walk') walkStep(dt); else { if (anim) anim(performance.now()); controls.update(); }
+  updateOverlay();
+  renderer.render(scene, camera);
+});
+layout(); applyClip(); updExportNote(); applyTheme();
+window.__v = { quick, setPreset, setStyle, setTab, select, nodes, OBJS, CURVES, THREE, camera: () => camera, partidas, refresh, sec, setSec };
+
+</script>
+</body>
+</html>
